@@ -1,0 +1,66 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# JavaScript dependencies and builds
+node_modules/
+dist/
+build/
+*.tsbuildinfo
+
+# Tests, reports, and coverage
+tests/
+__tests__/
+test_*.py
+*_test.py
+*.test.*
+*.spec.*
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+coverage/
+playwright-report/
+test-results/
+.playwright-cli/
+
+# Local runs and generated output
+*.log
+*.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+dev_runs/
+/runtime/
+/backend/runtime/logs/
+output/
+test_outputs/
+tmp/
+backups/
+*.zip
+
+# Editor and operating-system files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
