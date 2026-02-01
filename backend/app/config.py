@@ -215,11 +215,17 @@ class Settings:
     max_llm_tokens_per_trip: int = 0
     max_tool_calls_per_trip: int = 0
     max_search_calls_per_trip: int = 0
+    max_concurrent_planning_jobs: int = 2
+    planning_lease_seconds: int = 600
+    planning_heartbeat_seconds: int = 15
 
     @classmethod
     def from_env(cls, env_file: Path | None = None) -> Settings:
         load_dotenv(dotenv_path=env_file, override=False)
         return cls(
+            max_concurrent_planning_jobs=_env_int("PLANNER_MAX_CONCURRENT_JOBS", 2),
+            planning_lease_seconds=_env_int("PLANNER_JOB_LEASE_SECONDS", 600),
+            planning_heartbeat_seconds=_env_int("PLANNER_HEARTBEAT_SECONDS", 15),
             mode=os.getenv("PLANNER_MODE", "live").strip().lower(),
             timeout_seconds=float(os.getenv("PLANNER_TIMEOUT_SECONDS", "300")),
             openai_api_key=os.getenv("OPENAI_API_KEY") or None,
