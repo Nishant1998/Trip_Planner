@@ -1,0 +1,87 @@
+{
+  "schema_version": "trip_memory.v1",
+  "metadata": {
+    "slug": { "value": null },
+    "trip_name": { "value": null },
+    "trip_description": { "value": null },
+    "status": { "value": "draft" },
+    "currency_code": { "value": null },
+    "timezone": { "value": null },
+    "trip_scope": { "value": null }
+  },
+  "needed": {
+    "origin": { "value": null, "source": null },
+    "destination": { "value": null, "source": null },
+    "start_date": { "value": null, "source": null },
+    "end_date": { "value": null, "source": null },
+    "trip_duration_days": { "value": null, "source": null },
+    "num_adults": { "value": null, "source": null },
+    "trip_budget": { "value": null, "source": null }
+  },
+  "optional": {
+    "end_location": { "value": null, "source": null },
+    "trip_purpose": { "value": null, "source": null },
+    "num_children": { "value": null, "source": null },
+    "children_ages": { "value": null, "source": null },
+    "num_seniors": { "value": null, "source": null },
+    "depart_time_window": { "value": null, "source": null },
+    "arrival_time_window": { "value": null, "source": null },
+    "return_time_window": { "value": null, "source": null },
+    "day_start_time": { "value": null, "source": null },
+    "day_end_time": { "value": null, "source": null },
+    "travel_style": { "value": null, "source": null },
+    "spending_tier": { "value": null, "source": null },
+    "local_transport_modes": { "value": null, "source": null },
+    "long_distance_modes": { "value": null, "source": null },
+    "train_class": { "value": null, "source": null },
+    "flight_cabin_class": { "value": null, "source": null },
+    "activity_interests": { "value": null, "source": null },
+    "must_see": { "value": null, "source": null },
+    "avoid": { "value": null, "source": null },
+    "cuisine_prefs": { "value": null, "source": null },
+    "dietary_restrictions": { "value": null, "source": null },
+    "accessibility_needs": { "value": null, "source": null },
+    "hotel_tier": { "value": null, "source": null },
+    "lodging_type": { "value": null, "source": null },
+    "room_type_pref": { "value": null, "source": null },
+    "trip_notes": { "value": null, "source": null }
+  },
+  "internal": {
+    "pending_clarification": {
+      "active": false,
+      "variable": null,
+      "options": null,
+      "clarification_question": null,
+      "proposed_value": null
+    },
+    "confirmation_state": {
+      "active": false,
+      "summary_fingerprint": null
+    },
+    "enrichment_state": {
+      "fields_asked": [],
+      "enrichment_complete": false
+    },
+    "sanity_state": {
+      "destination_verified": false,
+      "resolved_city_names": [],
+      "destination_intelligence": null,
+      "destination_intelligence_snapshot": null,
+      "pre_summary_gate": {
+        "gate_awaiting_response": false,
+        "budget_check_accepted": false,
+        "budget_fields_snapshot": null,
+        "accessibility_check_accepted": false,
+        "accessibility_fields_snapshot": null,
+        "booking_window_note": null
+      }
+    },
+    "profile_signals": [],
+    "trip_context_notes": [],
+    "duration_display_label": null,
+    "data_confidence": null,
+    "correction_count": 0,
+    "intent_retry_count": 0,
+    "junk_turn_count": 0
+  }
+}
