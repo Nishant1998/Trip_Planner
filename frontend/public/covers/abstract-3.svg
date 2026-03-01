@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="meshViolet" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#09090b" />
+      <stop offset="40%" stop-color="#1e1b4b" />
+      <stop offset="80%" stop-color="#3b0764" />
+      <stop offset="100%" stop-color="#6b21a8" />
+    </linearGradient>
+    <radialGradient id="purpleGlow" cx="60%" cy="50%" r="55%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#09090b" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#meshViolet)" />
+  <rect width="800" height="450" fill="url(#purpleGlow)" />
+  <!-- Wireframe Isometric Travel Grid -->
+  <path d="M 100 450 L 400 200 L 700 450" fill="none" stroke="#c084fc" stroke-width="1.5" opacity="0.2" />
+  <path d="M 200 450 L 400 280 L 600 450" fill="none" stroke="#c084fc" stroke-width="1.5" opacity="0.25" />
+  <path d="M 300 450 L 400 360 L 500 450" fill="none" stroke="#e9d5ff" stroke-width="1.5" opacity="0.35" />
+  <!-- Floating Waypoint Beacon -->
+  <circle cx="400" cy="190" r="6" fill="#f3e8ff" />
+  <circle cx="400" cy="190" r="22" fill="none" stroke="#c084fc" stroke-width="1.5" opacity="0.4" />
+  <circle cx="400" cy="190" r="45" fill="none" stroke="#a855f7" stroke-width="1" stroke-dasharray="4,4" opacity="0.25" />
+</svg>

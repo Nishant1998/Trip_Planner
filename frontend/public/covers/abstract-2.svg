@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="100%" height="100%">
+  <defs>
+    <linearGradient id="meshObsidian" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#020617" />
+      <stop offset="50%" stop-color="#091e3a" />
+      <stop offset="85%" stop-color="#0c4a6e" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <radialGradient id="cyanOrb" cx="30%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.35" />
+      <stop offset="100%" stop-color="#020617" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#meshObsidian)" />
+  <rect width="800" height="450" fill="url(#cyanOrb)" />
+  <!-- Minimal Navigational Radar Rings -->
+  <circle cx="480" cy="225" r="160" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.15" />
+  <circle cx="480" cy="225" r="110" fill="none" stroke="#7dd3fc" stroke-width="1" stroke-dasharray="6,6" opacity="0.25" />
+  <circle cx="480" cy="225" r="60" fill="none" stroke="#e0f2fe" stroke-width="1.5" opacity="0.35" />
+  <circle cx="480" cy="225" r="4" fill="#38bdf8" />
+  <!-- Crosshairs -->
+  <line x1="480" y1="50" x2="480" y2="400" stroke="#38bdf8" stroke-width="1" stroke-dasharray="4,4" opacity="0.15" />
+  <line x1="280" y1="225" x2="680" y2="225" stroke="#38bdf8" stroke-width="1" stroke-dasharray="4,4" opacity="0.15" />
+</svg>
