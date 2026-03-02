@@ -50,6 +50,7 @@ test-results/
 dev_runs/
 /runtime/
 /backend/runtime/logs/
+/backend/app/runtime/logs/
 output/
 test_outputs/
 tmp/
