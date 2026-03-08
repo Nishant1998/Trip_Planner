@@ -79,8 +79,16 @@ class OpenAIResponsesToolModel:
         api_key: str,
         model: str,
         timeout_seconds: float,
+        *,
+        max_model_requests: int | None = None,
+        max_output_tokens: int | None = None,
     ) -> None:
+        if any(value is not None and value < 1 for value in (max_model_requests, max_output_tokens)):
+            raise ValueError("Model request and output limits must be positive")
         self.model_name = model
+        self.max_model_requests = max_model_requests
+        self.max_output_tokens = max_output_tokens
+        self.requests_started = 0
         # This workstation has an unavailable system proxy. Planning must use
         # the known-good direct HTTPS route, just like the web-search provider.
         self._http_client = httpx.AsyncClient(
@@ -188,8 +196,13 @@ class OpenAIResponsesToolModel:
         # invisible retries.  Provider-specific fallbacks create an adjusted
         # itinerary when a bounded attempt cannot complete.
         for attempt in range(2):
+            if self.max_model_requests is not None and self.requests_started >= self.max_model_requests:
+                raise RuntimeError("Planning model request limit reached")
+            if self.max_output_tokens is not None:
+                request["max_output_tokens"] = self.max_output_tokens
             try:
                 async with progress.track(stage):
+                    self.requests_started += 1
                     return await self._client.responses.parse(**request)
             except (
                 APIConnectionError,

@@ -215,6 +215,8 @@ class Settings:
     max_llm_tokens_per_trip: int = 0
     max_tool_calls_per_trip: int = 0
     max_search_calls_per_trip: int = 0
+    planner_model_request_limit: int = 0
+    planner_response_token_limit: int = 0
     max_concurrent_planning_jobs: int = 2
     planning_lease_seconds: int = 600
     planning_heartbeat_seconds: int = 15
@@ -223,6 +225,8 @@ class Settings:
     def from_env(cls, env_file: Path | None = None) -> Settings:
         load_dotenv(dotenv_path=env_file, override=False)
         return cls(
+            planner_model_request_limit=_env_nonnegative_int("PLANNER_MODEL_REQUEST_LIMIT", 0),
+            planner_response_token_limit=_env_nonnegative_int("PLANNER_RESPONSE_TOKEN_LIMIT", 0),
             max_concurrent_planning_jobs=_env_int("PLANNER_MAX_CONCURRENT_JOBS", 2),
             planning_lease_seconds=_env_int("PLANNER_JOB_LEASE_SECONDS", 600),
             planning_heartbeat_seconds=_env_int("PLANNER_HEARTBEAT_SECONDS", 15),

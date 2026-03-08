@@ -65,7 +65,9 @@ class PlanningService:
         if not settings.openai_api_key:
             raise ValueError("OPENAI_API_KEY not configured")
         return OpenAIResponsesToolModel(
-            settings.openai_api_key, settings.openai_model, 30
+            settings.openai_api_key, settings.openai_model, 30,
+            max_model_requests=settings.planner_model_request_limit or None,
+            max_output_tokens=settings.planner_response_token_limit or None,
         )
 
     async def on_confirmed(self, trip_id):
