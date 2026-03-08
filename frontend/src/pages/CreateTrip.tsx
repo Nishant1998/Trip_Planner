@@ -172,10 +172,74 @@ const PLANNING_STEPS: PlanningStep[] = [
 ]
 
 // Parse backend plan JSON into standardized presentation format
-const parseBackendPlan = (raw: any): NormalizedPlan | null => {
+export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
   if (!raw) return null
   try {
-    const p = typeof raw === 'string' ? JSON.parse(raw) : raw
+    const response = typeof raw === 'string' ? JSON.parse(raw) : raw
+    const payload = response.plan?.plan_json ?? response.plan ?? response
+    const p = typeof payload === 'string' ? JSON.parse(payload) : payload
+    if (p.schema_version === 'trip_plan.v2') {
+      const summary = p.trip_summary
+      const currency = summary.currency || p.total_estimated_cost?.currency || ''
+      const money = (value: unknown, unit = currency): string =>
+        typeof value === 'number' && Number.isFinite(value)
+          ? `${unit} ${value.toLocaleString()}`.trim()
+          : 'Cost to confirm'
+      const days: DayPlan[] = p.days.map((day: any) => ({
+        day: day.day,
+        date: day.date,
+        title: `Day ${day.day}${day.base_location ? ` — ${day.base_location}` : ''}`,
+        theme: day.base_location || 'Location to confirm',
+        weatherSummary: day.weather?.summary,
+        activities: day.events.map((event: any) => {
+          const clock = typeof event.start === 'string' ? event.start.match(/T(\d{2}:\d{2})/)?.[1] : undefined
+          return {
+            time: clock ? `${clock}${event.timing_status === 'provisional' ? ' (provisional)' : ''}` : 'Time to confirm',
+            title: event.title,
+            description: [event.reason, event.address].filter(Boolean).join(' · '),
+            category: event.kind,
+            duration: Number.isFinite(event.visit_minutes)
+              ? `${event.visit_minutes} min${event.duration_basis === 'planning_allowance' ? ' allowance' : ''}`
+              : 'Duration to confirm',
+            cost: money(event.estimated_cost, event.currency || currency),
+            driveTime: Number.isFinite(event.travel_from_previous?.duration_s)
+              ? `${Math.ceil(event.travel_from_previous.duration_s / 60)} min travel` : undefined,
+            mapUrl: event.map_url || undefined,
+            imageUrl: event.display_photos?.[0]?.url || undefined,
+          }
+        }),
+      }))
+      const costs = p.total_estimated_cost || {}
+      return {
+        destination: summary.requested_destinations.join(' → ') || summary.title,
+        deliveryStatus: p.delivery_status || (p.status === 'partial' ? 'DRAFT_NEEDS_CONFIRMATION' : undefined),
+        durationDays: days.length,
+        travelers: { adults: summary.adults, children: summary.children },
+        budgetTotal: summary.budget != null ? Number(summary.budget).toLocaleString() : 'Budget unavailable',
+        currency,
+        summary: summary.overview || summary.title,
+        days,
+        stays: (p.accommodation || []).map((record: any) => ({
+          name: record.selected?.name || record.stay_request.destination,
+          type: record.reason || 'Accommodation to confirm',
+          pricePerNight: record.selected?.price_basis === 'per_night'
+            ? money(record.selected.price, record.selected.currency || currency) : 'Nightly price to confirm',
+          image: placeholderCover(record.stay_request.destination),
+        })),
+        localTips: [],
+        packingList: [],
+        alerts: (p.warnings || []).map((warning: any) => ({ severity: warning.severity || 'warning', message: warning.message })),
+        budgetHealth: {
+          withinBudget: costs.budget_status === 'within' ? true : costs.budget_status === 'over' ? false : undefined,
+          categories: Object.fromEntries(Object.entries(costs.category_totals || {}).map(([key, value]) => [key, money(value, costs.currency || currency)])),
+        },
+        planningNotes: [
+          ...(summary.assumptions || []),
+          ...(costs.unknown_components?.length ? [`Costs to confirm: ${costs.unknown_components.join(', ')}`] : []),
+        ],
+        sources: [],
+      }
+    }
     // The final autonomous pipeline already supplies a display-ready contract.
     // Keep this direct path factual: unknown data is shown as unavailable,
     // never replaced with made-up ratings, times, or visit durations.
@@ -543,7 +607,7 @@ const CreateTrip: React.FC = () => {
           const res = await apiFetch(`/api/trips/${tripId}/plan`, { headers: headers() })
           if (!res.ok) return null
           const data = await res.json()
-          return parseBackendPlan(data.plan?.plan_json)
+          return parseBackendPlan(data)
         },
       })
       setPlan(nextPlan)
