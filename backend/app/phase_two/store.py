@@ -9,6 +9,21 @@ from psycopg.types.json import Json
 from .persistence import durable_plan
 
 
+def completed_job_status(row):
+    """Read older saved jobs without treating plan quality as execution state."""
+    if row is None:
+        return None
+    result = dict(row)
+    if (
+        result["status"] in {"complete", "partial"}
+        and result.get("progress_percent") == 100
+        and isinstance(result.get("result"), dict)
+        and result["result"].get("plan_id")
+    ):
+        result["status"] = "completed"
+    return result
+
+
 class PlanningStore:
     def __init__(self, repository):
         self.repository = repository
@@ -41,7 +56,7 @@ class PlanningStore:
                         (prior["id"],),
                     )
                 elif not retry:
-                    return dict(prior), False
+                    return completed_job_status(prior), False
             run_id = str(uuid.uuid4())
             row = conn.execute(
                 "INSERT INTO planning_jobs (id,trip_id,snapshot_id,status) VALUES (%s,%s,%s,'queued') RETURNING *",
@@ -53,10 +68,11 @@ class PlanningStore:
     async def status(self, trip_id):
         def read():
             with self.repository._connect() as conn:
-                return conn.execute(
+                row = conn.execute(
                     "SELECT id,status,progress_percent,current_step,result,failure FROM planning_jobs WHERE trip_id=%s ORDER BY created_at DESC,id DESC LIMIT 1",
                     (trip_id,),
                 ).fetchone()
+                return completed_job_status(row)
 
         return await asyncio.to_thread(read)
 

@@ -181,7 +181,7 @@ class PlanningService:
                     {"configurable": {"thread_id": job["id"]}, "recursion_limit": 24},
                 )
                 saved = state["persistence"].get("status") == "saved"
-                status = state["final_plan"].status if saved else "failed"
+                status = "completed" if saved else "failed"
                 result = {
                     "plan_id": state["persistence"].get("plan_id"),
                     "plan_status": state["final_plan"].status,
