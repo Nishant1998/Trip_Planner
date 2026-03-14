@@ -220,11 +220,11 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
         summary: summary.overview || summary.title,
         days,
         stays: (p.accommodation || []).map((record: any) => ({
-          name: record.selected?.name || record.stay_request.destination,
+          name: record.selected?.name || p.destinations.find((destination: any) => destination.id === record.stay_request.destination_id)?.label || 'Accommodation to confirm',
           type: record.reason || 'Accommodation to confirm',
           pricePerNight: record.selected?.price_basis === 'per_night'
             ? money(record.selected.price, record.selected.currency || currency) : 'Nightly price to confirm',
-          image: placeholderCover(record.stay_request.destination),
+          image: placeholderCover(record.stay_request.destination_id),
         })),
         localTips: [],
         packingList: [],
