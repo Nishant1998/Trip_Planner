@@ -413,13 +413,20 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
             progress.status = AgentTaskState.PARTIAL
         if (task == "schedule" and not update.get("itinerary")
                 and not state["routing"].repair_started):
-            update["itinerary"] = fallback_days(state["user_preferences"])
+            request = state["user_preferences"]
+            expected_dates = [request.start_date + timedelta(days=n)
+                              for n in range((request.end_date - request.start_date).days + 1)]
+            retain_allocation = [d.date for d in state["itinerary"]] == expected_dates
+            update["itinerary"] = (copy.deepcopy(state["itinerary"]) if retain_allocation
+                                   else fallback_days(request))
             warnings.append(
                 PlanWarning(
-                    code="itinerary_fallback",
+                    code="allocation_retained" if retain_allocation else "itinerary_fallback",
                     source="itinerary_planning",
                     affected_id=None,
-                    message="A day-by-day outline is shown because a verified schedule is unavailable.",
+                    message=("The allocated activities are retained as a draft; final scheduling did not complete."
+                             if retain_allocation else
+                             "A day-by-day outline is shown because a verified schedule is unavailable."),
                 )
             )
             progress.status = AgentTaskState.PARTIAL
@@ -477,7 +484,18 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
                 for i in issues
             ],
         )
-        title, overview = "Trip to " + ", ".join(request.destinations), ""
+        title = "Trip to " + ", ".join(request.destinations)
+        activities = sum(event.kind == "activity" for day in state["itinerary"] for event in day.events)
+        party = f"{request.adults} {'adult' if request.adults == 1 else 'adults'}"
+        if request.children:
+            party += f" and {request.children} {'child' if request.children == 1 else 'children'}"
+        overview = (
+            f"This {len(state['itinerary'])}-day draft is for your requested trip to "
+            f"{', '.join(request.destinations)} with {party}. "
+            + (f"It contains {activities} sightseeing activities arranged by day, not confirmed appointment times. "
+               if activities else "Sightseeing still needs planning; this outline is not a finished itinerary. ")
+            + "Review unresolved items and confirm bookings and total costs before travelling."
+        )
         if handlers.presentation:
             try:
                 remaining = (run.deadline_at - datetime.now(UTC)).total_seconds() - 5

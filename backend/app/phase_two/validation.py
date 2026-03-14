@@ -1,25 +1,39 @@
 """Deterministic feasibility checks; model opinions cannot override these."""
 
-from datetime import datetime, time, timedelta
+from datetime import UTC, datetime, time, timedelta
 
 from .contracts import CostRecord, ValidationIssue
 from .daywise import arithmetic, daywise_issues
+from .identity import matches_required_place
 
 
-def within_regular_hours(hours, start, end):
+def within_regular_hours(hours, start, end, *, on_date=None):
     """True/False for usable weekly periods, None for unparseable/unknown data."""
     periods = hours.get("periods") if isinstance(hours, dict) else None
-    if not isinstance(periods, list) or not start or not end:
+    if not isinstance(periods, list) or not ((start and end) or on_date):
         return None
     if not periods:
-        return None
+        return False  # Explicitly empty Google periods mean never open, not unknown.
     week = 7 * 24 * 60
-    begins = ((start.weekday() + 1) % 7) * 1440 + start.hour * 60 + start.minute
-    finishes = begins + (end - start).total_seconds() / 60
-    usable = False
+    timed = bool(start and end)
+    local_day = start if timed else on_date
+    begins = ((local_day.weekday() + 1) % 7) * 1440
+    if timed:
+        begins += start.hour * 60 + start.minute
+    finishes = begins + ((end - start).total_seconds() / 60 if timed else 1440)
+    usable, malformed = False, False
     for period in periods:
         try:
             opened, closed = period["open"], period.get("close")
+            for clock in (opened, closed) if closed is not None else (opened,):
+                if (not isinstance(clock, dict)
+                        or not isinstance(clock.get("day"), int)
+                        or not 0 <= clock["day"] <= 6
+                        or not isinstance(clock.get("hour", 0), int)
+                        or not 0 <= clock.get("hour", 0) <= 23
+                        or not isinstance(clock.get("minute", 0), int)
+                        or not 0 <= clock.get("minute", 0) <= 59):
+                    raise ValueError("invalid weekly clock")
             left = (
                 opened["day"] * 1440
                 + opened.get("hour", 0) * 60
@@ -28,6 +42,7 @@ def within_regular_hours(hours, start, end):
             if closed is None:
                 if left == 0:
                     return True  # Google's 24/7 representation.
+                malformed = True
                 continue
             right = (
                 closed["day"] * 1440
@@ -38,13 +53,15 @@ def within_regular_hours(hours, start, end):
                 right += week
             usable = True
             if any(
-                left <= begins + shift and finishes + shift <= right
+                (left <= begins + shift and finishes + shift <= right) if timed
+                else (left < finishes + shift and begins + shift < right)
                 for shift in (-week, 0, week)
             ):
                 return True
         except (KeyError, TypeError, ValueError):
+            malformed = True
             continue
-    return False if usable else None
+    return False if usable and not malformed else None
 
 
 def validate_plan(state):
@@ -109,11 +126,23 @@ def validate_plan(state):
                       "schedule")
     visited_destinations = set()
     names, ids = [], set()
+    endpoint = (request.origin if prefs.end_location
+                and prefs.end_location.casefold() == "origin" else prefs.end_location)
     for day_index, day in enumerate(days):
         previous_end, previous_place = None, None
         if day.base_location:
             visited_destinations.add(day.base_location.casefold())
-        if day.base_location and day.base_location not in request.destinations:
+        transfer_base = bool(
+            day.base_location and day.events
+            and not any(e.kind == "activity" for e in day.events)
+            and any(e.kind == "travel" for e in day.events)
+            and ((day_index == 0 and day.base_location.casefold() == request.origin.casefold())
+                 or (day_index == len(days) - 1 and endpoint
+                     and day.base_location.casefold() == endpoint.casefold()))
+        )
+        if (day.base_location
+                and day.base_location.casefold() not in {d.casefold() for d in request.destinations}
+                and not transfer_base):
             issue(
                 "destination_unrequested",
                 "Base location is outside the confirmed destination list.",
@@ -149,7 +178,18 @@ def validate_plan(state):
             if event.id in ids:
                 issue("duplicate_event", "Event IDs must be unique.", event.id)
             ids.add(event.id)
-            names.append(event.title.casefold())
+            place = places.get(event.place_id)
+            closed = bool(place and place.business_status in
+                          {"CLOSED_TEMPORARILY", "CLOSED_PERMANENTLY", "FUTURE_OPENING"})
+            if (event.kind == "activity" and place and place.evidence
+                    and place.status != "unavailable" and not closed):
+                destination = next((d.label for d in state["destinations"]
+                                    if d.id == place.destination_id), "")
+                names.append((place.name, destination))
+            if event.kind == "activity" and closed:
+                issue("place_closed",
+                      "Provider reports this place is not operational; confirm reopening before planning a visit.",
+                      event.id, "research")
             if event.visit_minutes is not None and event.duration_basis == "unknown":
                 issue("duration_basis_unknown",
                       "Visit duration needs a source or a labeled planning allowance.",
@@ -286,7 +326,8 @@ def validate_plan(state):
                         )
                     else:
                         fits = within_regular_hours(
-                            place.opening_hours, event.start, event.end
+                            place.opening_hours, event.start, event.end,
+                            on_date=day.date if state["run"].planning_profile != "full" else None,
                         )
                         if fits is False:
                             issue(
@@ -320,22 +361,36 @@ def validate_plan(state):
                   "A requested destination has no planned day or visit.",
                   destination, "allocation")
     if prefs.end_location:
-        endpoint = (request.origin if prefs.end_location.casefold() == "origin"
-                    else prefs.end_location)
-        reached = bool(days and days[-1].base_location
-                       and days[-1].base_location.casefold() == endpoint.casefold()) or any(
-            journey.destination.casefold() == endpoint.casefold()
-            and selected_journeys.get(journey.id) is not None
-            and selected_journeys[journey.id].arrival is not None
-            and selected_journeys[journey.id].arrival.date() <= request.end_date
-            for journey in state["journeys"]
+        final_base_matches = bool(days and days[-1].base_location
+                                  and days[-1].base_location.casefold() == endpoint.casefold())
+        last_date = max((j.departure_date for j in state["journeys"]), default=None)
+        latest = [j for j in state["journeys"] if j.departure_date == last_date]
+        departures = [selected_journeys.get(j.id) for j in latest]
+        if latest and all(o and o.departure and o.departure.utcoffset() is not None
+                          for o in departures):
+            last_time = max(o.departure.astimezone(UTC) for o in departures)
+            latest = [j for j in latest
+                      if selected_journeys[j.id].departure.astimezone(UTC) == last_time]
+        # Without zoned times, several same-day legs have no proven final order.
+        final_arrival_matches = bool(latest) and all(
+            j.destination.casefold() == endpoint.casefold()
+            and (option := selected_journeys.get(j.id)) and option.arrival
+            and request.start_date <= option.arrival.date() <= request.end_date
+            for j in latest
         )
+        # A later departure takes precedence over an earlier endpoint arrival.
+        contradicts_endpoint = bool(
+            last_date == request.end_date
+            and any(j.destination.casefold() != endpoint.casefold() for j in latest)
+        )
+        reached = (final_base_matches and not contradicts_endpoint) or final_arrival_matches
         if not reached:
             issue("endpoint_unverified",
                   "The required final location is absent from the final base and selected arrivals.",
                   endpoint, "allocation")
     for must in request.must_see:
-        if not any(must.casefold() in name for name in names):
+        if not any(matches_required_place(must, name, destination)
+                   for name, destination in names):
             issue(
                 "must_see_unresolved",
                 f"Requested must-see remains unresolved: {must}",

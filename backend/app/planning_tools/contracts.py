@@ -18,6 +18,8 @@ class ToolStatus(StrEnum):
 
 
 T = TypeVar("T")
+BusinessStatus = Literal["BUSINESS_STATUS_UNSPECIFIED", "OPERATIONAL",
+                         "CLOSED_TEMPORARILY", "CLOSED_PERMANENTLY", "FUTURE_OPENING"]
 
 
 class ToolResult(BaseModel, Generic[T]):
@@ -44,6 +46,7 @@ class Place(BaseModel):
     types: list[str] = Field(default_factory=list)
     map_url: str | None = None
     opening_hours: dict | None = None
+    business_status: BusinessStatus | None = None
     photo_names: list[str] = Field(default_factory=list)
     photos: list["PlacePhotoReference"] = Field(default_factory=list)
 

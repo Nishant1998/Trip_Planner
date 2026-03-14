@@ -14,6 +14,7 @@ from typing import Any, Literal, TypedDict
 from app.models.memory import OptionalFieldValues
 from app.planning_tools.contracts import (
     BookingOption,
+    BusinessStatus,
     Coordinates,
     Photo,
     PlacePhotoReference,
@@ -119,6 +120,7 @@ class PlaceRecord(BaseModel):
     address: str | None = None
     categories: list[str] = Field(default_factory=list)
     opening_hours: dict[str, Any] | None = None
+    business_status: BusinessStatus | None = None
     image_refs: list[str] = Field(default_factory=list)
     photos: list[PlacePhotoReference] = Field(default_factory=list)
     display_photos: list[Photo] = Field(default_factory=list)

@@ -488,6 +488,7 @@ class SixAgentRuntime:
                     address=place.address,
                     categories=place.types,
                     opening_hours=place.opening_hours,
+                    business_status=place.business_status,
                     image_refs=place.photo_names,
                     photos=place.photos,
                     display_photos=photos,

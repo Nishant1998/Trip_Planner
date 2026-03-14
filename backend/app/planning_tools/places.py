@@ -13,11 +13,11 @@ from .http import HttpTool, failure, result, unavailable
 BASE = "https://places.googleapis.com/v1"
 SEARCH_FIELDS = (
     "places.id,places.displayName,places.location,places.formattedAddress,"
-    "places.types,places.googleMapsUri"
+    "places.types,places.googleMapsUri,places.businessStatus"
 )
 DETAIL_FIELDS = (
     "id,displayName,location,formattedAddress,types,googleMapsUri,"
-    "regularOpeningHours,photos"
+    "regularOpeningHours,photos,businessStatus"
 )
 
 
@@ -39,6 +39,7 @@ def _place(raw: dict) -> Place:
         types=raw.get("types") or [],
         map_url=raw.get("googleMapsUri"),
         opening_hours=raw.get("regularOpeningHours"),
+        business_status=raw.get("businessStatus"),
         photo_names=[p["name"] for p in raw.get("photos") or [] if p.get("name")],
         photos=[{"name": p["name"], "attribution": p.get("authorAttributions") or []}
                 for p in raw.get("photos") or [] if p.get("name")],
