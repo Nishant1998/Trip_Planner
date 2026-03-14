@@ -432,6 +432,8 @@ class SixAgentRuntime:
         return warnings
 
     async def supervisor(self, state, eligible):
+        if len(eligible) == 1:
+            return RoutingDecision(task=eligible[0], reason="Only one dependency-safe task remains.")
         return await self.invoke("supervisor", state, eligible_tasks=eligible)
 
     async def research(self, state):

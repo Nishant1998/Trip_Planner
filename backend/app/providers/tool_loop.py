@@ -31,6 +31,10 @@ class AgentToolInputError(ValueError):
     """A safe, actionable tool-input error that the calling agent may see."""
 
 
+class ModelOutputIncomplete(RuntimeError):
+    """A schema retry with the same output budget cannot repair truncated JSON."""
+
+
 @dataclass(frozen=True, slots=True)
 class AgentTool:
     name: str
@@ -82,6 +86,7 @@ class OpenAIResponsesToolModel:
         *,
         max_model_requests: int | None = None,
         max_output_tokens: int | None = None,
+        request_reserves: dict[str, int] | None = None,
     ) -> None:
         if any(value is not None and value < 1 for value in (max_model_requests, max_output_tokens)):
             raise ValueError("Model request and output limits must be positive")
@@ -89,6 +94,9 @@ class OpenAIResponsesToolModel:
         self.max_model_requests = max_model_requests
         self.max_output_tokens = max_output_tokens
         self.requests_started = 0
+        self.request_reserves = dict(request_reserves or {})
+        if any(value < 0 for value in self.request_reserves.values()):
+            raise ValueError("Model request reserves must be nonnegative")
         # This workstation has an unavailable system proxy. Planning must use
         # the known-good direct HTTPS route, just like the web-search provider.
         self._http_client = httpx.AsyncClient(
@@ -139,6 +147,7 @@ class OpenAIResponsesToolModel:
             response = await self._parse_with_rate_limit_retry(
                 progress=progress,
                 stage=turn_stage(),
+                request_reserve=self.request_reserves.get(agent_name, 0),
                 **request,
             )
             _add_usage(usage, getattr(response, "usage", None))
@@ -189,6 +198,7 @@ class OpenAIResponsesToolModel:
         *,
         progress: ProgressReporter,
         stage: PlanningStage,
+        request_reserve: int = 0,
         **request: Any,
     ) -> Any:
         """Retry temporary provider failures without abandoning a trip."""
@@ -196,7 +206,8 @@ class OpenAIResponsesToolModel:
         # invisible retries.  Provider-specific fallbacks create an adjusted
         # itinerary when a bounded attempt cannot complete.
         for attempt in range(2):
-            if self.max_model_requests is not None and self.requests_started >= self.max_model_requests:
+            if (self.max_model_requests is not None
+                    and self.requests_started >= self.max_model_requests - request_reserve):
                 raise RuntimeError("Planning model request limit reached")
             if self.max_output_tokens is not None:
                 request["max_output_tokens"] = self.max_output_tokens
@@ -204,6 +215,13 @@ class OpenAIResponsesToolModel:
                 async with progress.track(stage):
                     self.requests_started += 1
                     return await self._client.responses.parse(**request)
+            except ValidationError as error:
+                if any(item["type"] == "json_invalid" and "EOF" in item["msg"]
+                       for item in error.errors(include_input=False, include_url=False)):
+                    raise ModelOutputIncomplete(
+                        "Planning output was truncated; review the response-token allowance."
+                    ) from None
+                raise
             except (
                 APIConnectionError,
                 APITimeoutError,

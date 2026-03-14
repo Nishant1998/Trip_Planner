@@ -68,6 +68,10 @@ class PlanningService:
             settings.openai_api_key, settings.openai_model, 30,
             max_model_requests=settings.planner_model_request_limit or None,
             max_output_tokens=settings.planner_response_token_limit or None,
+            request_reserves={role: 1 for role in (
+                "supervisor", "destination_research", "itinerary_planning",
+                "accommodation", "transport_booking",
+            )},
         )
 
     async def on_confirmed(self, trip_id):
