@@ -251,6 +251,17 @@ class TripSummary(BaseModel):
     overview: str = ""
 
 
+class BudgetGuidance(BaseModel):
+    scope: Literal["full_trip_party"] = "full_trip_party"
+    currency: str
+    budget: float = Field(gt=0)
+    adults: int
+    children: int
+    nights: int
+    category_limits: dict[str, float]
+    basis: str
+
+
 class TripPlanV2(BaseModel):
     planning_profile: Literal["full", "daywise", "discovery"] = "full"
     route_profiles: dict[str, Any] = Field(default_factory=dict)
@@ -265,6 +276,7 @@ class TripPlanV2(BaseModel):
     transport: list[TransportRecord]
     days: list[PlannedDay]
     total_estimated_cost: CostRecord
+    budget_guidance: BudgetGuidance | None = None
     warnings: list[PlanWarning]
     generated_at: datetime
     weather: list[WeatherRecord] = Field(default_factory=list)

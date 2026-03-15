@@ -125,6 +125,14 @@ def render_plan(payload):
         costs.append(f'<tr><td>{label(category)}</td><td>Unknown — excluded from subtotal</td></tr>')
     costs.append(f'<tr><th>Known subtotal</th><th>{text(c["currency"])} {text(c["known_subtotal"])}</th></tr></table><p>Trip budget: {text(summary["budget"])} {text(summary["currency"])} · budget status: {text(c["budget_status"])}</p>')
     sections.append('<section id="costs">' + ''.join(costs) + '</section>')
+    guide = view["budget_guidance"]
+    if guide:
+        targets = ['<h2>Suggested spending limits</h2><p>' + text(guide["basis"]) + '</p>',
+                   '<table><tr><th>Category</th><th>Full-trip target</th></tr>']
+        targets += [f'<tr><td>{label(category)}</td><td>{text(guide["currency"])} {text(amount)}</td></tr>'
+                    for category, amount in guide["category_limits"].items()]
+        targets.append(f'</table><p>{guide["adults"]} adults · {guide["children"]} children · {guide["nights"]} nights. Actual budget fit is still {text(c["budget_status"])}.</p>')
+        sections.append('<section>' + ''.join(targets) + '</section>')
     warnings = list(dict.fromkeys(w["message"] for w in view["warnings"]))
     sections.append('<section id="warnings"><h2>Confirm before travelling</h2><ul>' + ''.join('<li>' + text(w) + '</li>' for w in warnings) + '</ul><p>Recheck opening hours, entry requirements, accessibility and bookings before departure.</p></section>')
     sections.append('<footer>Keep this plan with you: use your browser’s Print / Save as PDF. No bookings have been made.</footer>')

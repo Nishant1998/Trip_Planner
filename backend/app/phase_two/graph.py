@@ -41,6 +41,7 @@ from .contracts import (
     TripSummary,
     WeatherRecord,
 )
+from .budget import spending_targets
 from .itinerary_fallback import fallback_days
 from .validation import validate_plan
 
@@ -548,6 +549,7 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
             transport=state["transport_options"],
             days=state["itinerary"],
             total_estimated_cost=costs,
+            budget_guidance=spending_targets(request),
             warnings=warnings,
             generated_at=datetime.now(UTC),
             weather=state["weather"],
