@@ -19,6 +19,7 @@ def durable_plan(plan):
         destination["location"] = None
     for day in result.get("days", []):
         day["daily_distance_m"] = None
+        day["title"], day["summary"] = "", ""
         for event in day.get("events", []):
             if synthetic(event):
                 continue  # Locally authored fixture evidence has no provider retention restriction.

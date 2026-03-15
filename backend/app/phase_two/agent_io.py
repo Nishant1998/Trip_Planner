@@ -49,6 +49,7 @@ class EventProposal(Output):
         "activity", "travel", "meal", "rest", "check_in", "check_out", "unallocated"
     ]
     title: str
+    period: Literal["morning", "midday", "afternoon", "evening", "flexible"] | None = None
     place_id: str | None = None
     start: datetime | None = None
     end: datetime | None = None
@@ -59,6 +60,8 @@ class EventProposal(Output):
 class DayProposal(Output):
     day: int = Field(ge=1)
     base_location: str | None = None
+    title: str = ""
+    summary: str = ""
     events: list[EventProposal] = Field(default_factory=list)
 
 

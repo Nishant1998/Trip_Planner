@@ -35,6 +35,7 @@ def discovery_plan(payload: dict[str, Any]) -> dict[str, Any]:
                 "reason": event.reason,
                 "visit_minutes": event.visit_minutes,
                 "duration_basis": event.duration_basis,
+                "period": event.period,
                 "estimated_cost": event.estimated_cost,
                 "currency": event.currency,
                 "evidence": [item.model_dump(mode="json") for item in event.evidence],
@@ -42,13 +43,14 @@ def discovery_plan(payload: dict[str, Any]) -> dict[str, Any]:
             for event in day.events if event.kind == "activity"
         ]
         other_events = [
-            {"kind": event.kind, "title": event.title, "reason": event.reason}
+            {"kind": event.kind, "title": event.title, "reason": event.reason, "period": event.period}
             for event in day.events if event.kind != "activity"
         ]
         meaningful = pois or any(event.kind in {"travel", "rest"} for event in day.events)
         days.append({
             "day": day.day, "date": day.date.isoformat(),
             "base_location": day.base_location, "pois": pois,
+            "title": day.title, "summary": day.summary,
             "workload": day.workload,
             "other_events": other_events,
             "content_status": "suggestions" if meaningful else "pending",

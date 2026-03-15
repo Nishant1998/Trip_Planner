@@ -46,6 +46,7 @@ from .contracts import (
     WeatherRecord,
 )
 from .prompts import COMMON, PROMPTS, VERSION
+from .budget import spending_targets
 from .daywise import DAILY_TIME_POLICY, day_workload, local_agent_tools, road_options
 
 
@@ -154,6 +155,17 @@ def json_value(value):
         return {str(k): json_value(v) for k, v in value.items()}
     if isinstance(value, (tuple, list)):
         return [json_value(v) for v in value]
+    return value
+
+
+def planning_value(value):
+    """Keep display evidence in the ledger, not in every planning prompt."""
+    value = json_value(value)
+    if isinstance(value, dict):
+        return {key: planning_value(item) for key, item in value.items()
+                if key not in {"photos", "photo_names", "image_refs", "display_photos"}}
+    if isinstance(value, list):
+        return [planning_value(item) for item in value]
     return value
 
 
@@ -311,7 +323,7 @@ class SixAgentRuntime:
                         "continuation_token": result.continuation_token,
                         "continuation_tokens": result.continuation_tokens,
                     }
-                return result
+                return planning_value(result)
 
             tools.append(
                 AgentTool(
@@ -320,7 +332,7 @@ class SixAgentRuntime:
                     TOOL_INPUTS[name],
                     execute,
                     spec.stage,
-                    allow_repeated_calls=True,
+                    allow_repeated_calls=name in ("transport", "accommodation"),
                 )
             )
         tools.extend(local_agent_tools(role, state, self.entries, self.route_results))
@@ -329,7 +341,7 @@ class SixAgentRuntime:
         )
         payload = {
             "requirements": request,
-            "state": {k: json_value(state.get(k)) for k in spec.state_keys},
+            "state": {k: planning_value(state.get(k)) for k in spec.state_keys},
             "remaining_seconds": max(0, int(remaining - reserve)),
             "tool_limits": self.catalog.run_guard.limits,
             "prompt_version": VERSION,
@@ -337,6 +349,7 @@ class SixAgentRuntime:
             **extra,
         }
         if state["run"].planning_profile != "full":
+            payload["spending_targets"] = json_value(spending_targets(state["user_preferences"]))
             payload["daily_time_policy"] = dict(DAILY_TIME_POLICY)
             payload["daily_capacity"] = [
                 {"day": d.day, "date": str(d.date), "base_location": d.base_location,
@@ -580,6 +593,8 @@ class SixAgentRuntime:
                     date=state["user_preferences"].start_date
                     + timedelta(days=day.day - 1),
                     base_location=day.base_location,
+                    title=day.title,
+                    summary=day.summary,
                     events=events,
                 )
             )

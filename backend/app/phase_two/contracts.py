@@ -197,6 +197,7 @@ class PlannedEvent(BaseModel):
         "activity", "travel", "meal", "rest", "check_in", "check_out", "unallocated"
     ]
     title: str
+    period: Literal["morning", "midday", "afternoon", "evening", "flexible"] | None = None
     start: datetime | None = None
     end: datetime | None = None
     timing_status: Literal["scheduled", "provisional", "unscheduled"] = "unscheduled"
@@ -231,6 +232,8 @@ class PlannedDay(BaseModel):
     day: int = Field(ge=1)
     date: date
     base_location: str | None = None
+    title: str = ""
+    summary: str = ""
     events: list[PlannedEvent] = Field(default_factory=list)
     weather: WeatherRecord | None = None
     daily_cost: CostRecord = Field(default_factory=CostRecord)

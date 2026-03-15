@@ -52,9 +52,14 @@ def render_plan(payload):
         '<nav aria-label="Itinerary sections">' + ''.join(f'<a href="#day-{d["day"]}">Day {d["day"]}</a>' for d in view["days"]) + '<a href="#stays">Stays</a><a href="#transfers">Transfers</a><a href="#costs">Budget</a><a href="#warnings">Before you go</a></nav>']
     for day in view["days"]:
         content = [f'<h2>Day {day["day"]} · {text(day["date"])} · {text(day["base_location"])}</h2>']
+        if day["title"]:
+            content.append(f'<h3>{text(day["title"])}</h3>')
+        if day["summary"]:
+            content.append(f'<p>{text(day["summary"])}</p>')
         for poi in day["pois"]:
             basis = {"planning_allowance": "Estimated visit allowance", "provider": "Source claim; see validation warnings", "unknown": "Visit time unconfirmed"}.get(poi["duration_basis"], "Visit time unconfirmed")
-            content.append(f'<article class="activity"><h3>{text(poi["name"])}</h3><p>{text(poi["reason"])}</p><p class="tag">{text(minutes(poi["visit_minutes"]))} · {basis}</p></article>')
+            period = f'{label(poi["period"])} · Flexible order · ' if poi["period"] else ''
+            content.append(f'<article class="activity"><h3>{text(poi["name"])}</h3><p>{text(poi["reason"])}</p><p class="tag">{period}{text(minutes(poi["visit_minutes"]))} · {basis}</p></article>')
         if day["content_status"] == "pending":
             content.append('<p class="banner">Activities still need planning for this day.</p>')
         for event in day["other_events"]:
