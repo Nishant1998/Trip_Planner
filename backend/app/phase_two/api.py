@@ -5,7 +5,7 @@ from typing import Annotated
 
 from app.api.auth import AuthenticatedUser, current_user, require_trip_owner
 from app.api.trips import require_trip_by_slug_or_id
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, Response
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
@@ -34,8 +34,9 @@ def register_planning_routes(router, repository, service):
         }
 
     @router.get("/{slug_or_id}/plan")
-    async def get_plan(slug_or_id: str, user: CurrentUser):
+    async def get_plan(slug_or_id: str, user: CurrentUser, response: Response):
         trip = own(slug_or_id, user)
+        response.headers["Cache-Control"] = "no-store"
         plan = await asyncio.to_thread(repository.get_active_trip_plan, trip.id)
         if not plan:
             read_artifact = getattr(repository, "get_latest_planning_artifact", None)
@@ -57,16 +58,19 @@ def register_planning_routes(router, repository, service):
                 "display_fields_status": "refresh_required",
                 "warnings": ["This saved draft uses the older plan format; confirm its details before booking."],
             }
+        display_cache = getattr(service, "display_plans", None)
+        fresh = display_cache.get(plan.plan_json.get("plan_id")) if display_cache else None
+        payload = fresh or plan.plan_json
         return {
-            "plan": plan.plan_json,
+            "plan": payload,
             "discovery": (
-                discovery_plan(plan.plan_json)
-                if plan.plan_json.get("schema_version") == "trip_plan.v2"
+                discovery_plan(payload)
+                if payload.get("schema_version") == "trip_plan.v2"
                 else None
             ),
             "version": plan.version,
-            "display_fields_status": "refresh_required",
-            "warnings": [
+            "display_fields_status": "fresh" if fresh else "refresh_required",
+            "warnings": [] if fresh else [
                 "Provider display fields are not permanently cached. Refresh explicitly before display."
             ],
         }

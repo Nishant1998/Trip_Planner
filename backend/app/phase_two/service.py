@@ -15,6 +15,7 @@ from .graph import GraphHandlers, build_graph, initial_state
 from .input_adapter import request_from_confirmed_memory
 from .persistence import CollectionJournal, PostgresControlCheckpointer
 from .runtime import SixAgentRuntime
+from .ephemeral import EphemeralPlans
 from .store import PlanningStore
 
 
@@ -54,6 +55,7 @@ class PlanningService:
         self.model_factory = model_factory or self._model
         self.catalog_factory = catalog_factory or PlanningToolCatalog.from_local_env
         self.tasks = set()
+        self.display_plans = EphemeralPlans()
         self.semaphore = asyncio.Semaphore(2)
 
     @staticmethod
@@ -185,6 +187,8 @@ class PlanningService:
                     {"configurable": {"thread_id": job["id"]}, "recursion_limit": 24},
                 )
                 saved = state["persistence"].get("status") == "saved"
+                if saved:
+                    self.display_plans.put(state["final_plan"])
                 status = "completed" if saved else "failed"
                 result = {
                     "plan_id": state["persistence"].get("plan_id"),
@@ -239,3 +243,4 @@ class PlanningService:
         for task in list(self.tasks):
             task.cancel()
         await asyncio.gather(*self.tasks, return_exceptions=True)
+        self.display_plans.clear()
