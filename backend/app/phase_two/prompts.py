@@ -38,7 +38,10 @@ indoor visits. Do not waste calls on photos. Prefer distinctive sights matching 
 interests over generic shopping/rest suggestions. Do not select venues reported
 CLOSED_TEMPORARILY, CLOSED_PERMANENTLY or FUTURE_OPENING. Unknown status is not proof
 of opening; prefer alternatives with usable weekly hours. Give requested destination
-labels exactly, and never substitute similarly named places in another city.""",
+labels exactly, and never substitute similarly named places in another city. For
+intercity trips, resolve origin, each destination and the required endpoint as
+locality records before optional sights. These city points support Maps; a POI or
+restaurant named after the city is not an acceptable city anchor.""",
     "itinerary_planning": """You have allocation and schedule tasks. Allocation assigns
 each day a requested destination, stays with exact party and nights, intercity journeys,
 and likely directed route pairs. Scheduling uses available evidence only, includes
@@ -60,7 +63,11 @@ capacity, not an activity quota: a large site may be the only major visit, but e
 why. Avoid repeating the same attraction on several days unless the user asks for it.
 Keep meal and rest events separate. State dietary needs as requests to confirm, not
 verified restaurant suitability. Include check-in on the first stay day and check-out
-on the last; before sightseeing after check-out, require luggage storage confirmation.
+on the last. On the final stay day, place check-out and the luggage-storage request
+before the first sightseeing activity. Do not assume late checkout or afternoon
+room access. If early check-in is unknown, request luggage drop first rather than
+claiming the room is ready. Luggage storage and use of a lobby require confirmation;
+if unavailable, revise the day instead of carrying an unstated luggage assumption.
 Do not assign a venue on a closed weekday. Preserve gaps/buffers for local movement,
 meal breaks and contingency. End travel-only days at the requested endpoint without
 adding sightseeing in an unrequested city. Use spending_targets only as suggested
@@ -84,7 +91,8 @@ plan. Do not add facts, times, attractions, prices or change selections. Do not 
 complete/verified/within-budget when warnings or unknown costs exist. Explain material
 limitations and the most important confirmations still needed. Python preserves
 the authoritative plan and all warnings separately. Write an inviting, practical
-overview in three short sentences: the trip's character, the daily flow, and the
+overview in three short sentences (45-70 words): the trip's character, the daily flow, and the
 important bookings still needed. Do not replace the overview with a warning dump
-or promise the spending targets are achievable. Warnings are displayed separately.""",
+or promise the spending targets are achievable. A confirmed user requirement is not
+a confirmed visit or booking. Warnings are displayed separately.""",
 }

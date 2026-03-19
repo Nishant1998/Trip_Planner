@@ -47,6 +47,7 @@ from .contracts import (
 )
 from .prompts import COMMON, PROMPTS, VERSION
 from .budget import spending_targets
+from .identity import city_points, resolve_label
 from .daywise import DAILY_TIME_POLICY, day_workload, local_agent_tools, road_options
 
 
@@ -357,9 +358,11 @@ class SixAgentRuntime:
                 for d in state["itinerary"]
             ]
         if state["run"].planning_profile != "full" and role == "transport_booking":
-            labels = {request["origin"], *request["destinations"], request["preferences"].get("end_location")}
-            payload["resolved_city_points"] = [json_value(p) for name, query, result in self.entries if name == "places"
-                for p in (result.data if isinstance(result.data, list) else [result.data]) if isinstance(p, Place) and p.name in labels]
+            endpoint = request["preferences"].get("end_location")
+            endpoint = request["origin"] if endpoint == "origin" else endpoint
+            labels = list(dict.fromkeys([request["origin"], *request["destinations"], *([endpoint] if endpoint else [])]))
+            payload["resolved_city_points"] = [dict(planning_value(p), requested_label=label)
+                                               for label, p in city_points(self.entries, labels).items()]
         if state["routing"].repair_started and role != "response_aggregator":
             owners = {
                 "destination_research": {"research"},
@@ -466,7 +469,16 @@ class SixAgentRuntime:
                 data = result.data if isinstance(result.data, list) else [result.data]
                 for place in data:
                     if isinstance(place, Place):
-                        found[place.place_id] = (place, evidence)
+                        prior = found.get(place.place_id)
+                        if prior:
+                            updates = {field: getattr(place, field) for field in Place.model_fields
+                                       if getattr(place, field) is not None
+                                       and (field not in {"photos", "photo_names"} or getattr(place, field))}
+                            place = prior[0].model_copy(update=updates)
+                            place_evidence = [*prior[1], *evidence]
+                        else:
+                            place_evidence = evidence
+                        found[place.place_id] = (place, place_evidence)
             if name == "weather" and isinstance(result.data, WeatherReport):
                 weather.append((query, result, evidence))
         destinations = [
@@ -476,7 +488,7 @@ class SixAgentRuntime:
         places, reports = [], []
         for choice in output.choices:
             destination = next(
-                (d for d in destinations if d.label == choice.destination), None
+                (d for d in destinations if d.label == resolve_label(choice.destination, [item.label for item in destinations])), None
             )
             if destination is None or choice.place_id not in found:
                 continue
@@ -546,6 +558,10 @@ class SixAgentRuntime:
     async def itinerary(self, state, task):
         output = await self.invoke("itinerary_planning", state, task=task)
         days = []
+        request = state["user_preferences"]
+        endpoint = request.preferences.end_location
+        endpoint = request.origin if endpoint and endpoint.casefold() == "origin" else endpoint
+        labels = list(dict.fromkeys([request.origin, *request.destinations, *([endpoint] if endpoint else [])]))
         places = {p.id: p for p in state["places"]}
         routes = {(r.origin_id, r.destination_id, r.mode.upper()): r
                   for r in state["route_matrix"]}
@@ -592,7 +608,7 @@ class SixAgentRuntime:
                     day=day.day,
                     date=state["user_preferences"].start_date
                     + timedelta(days=day.day - 1),
-                    base_location=day.base_location,
+                    base_location=resolve_label(day.base_location, labels) or day.base_location,
                     title=day.title,
                     summary=day.summary,
                     events=events,
@@ -603,13 +619,17 @@ class SixAgentRuntime:
             "route_requirements": output.route_requirements,
             "warnings": self.warnings("itinerary_planning", output),
         }
+        journeys = [j.model_copy(update={
+            "origin": resolve_label(j.origin, labels) or j.origin,
+            "destination": resolve_label(j.destination, labels) or j.destination,
+        }) for j in output.journeys]
         if task == "allocation":
-            update.update(stay_requests=output.stays, journeys=output.journeys)
+            update.update(stay_requests=output.stays, journeys=journeys)
         elif state["routing"].repair_started:
             if output.stays:
                 update["stay_requests"] = output.stays
             if output.journeys:
-                update["journeys"] = output.journeys
+                update["journeys"] = journeys
         return update
 
     async def accommodation(self, state):

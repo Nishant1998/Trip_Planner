@@ -74,7 +74,9 @@ class RoutesTools(HttpTool):
                 if not isinstance(elements, list):
                     raise ValueError("Expected matrix element list")
                 for element in elements:
-                    i, j = element["originIndex"], element["destinationIndex"]
+                    # ProtoJSON omits scalar indexes whose value is zero.
+                    # https://protobuf.dev/programming-guides/json/#presence-and-default-values
+                    i, j = element.get("originIndex", 0), element.get("destinationIndex", 0)
                     if not (0 <= i < len(origins) and 0 <= j < len(query.destinations)):
                         raise ValueError("Matrix index outside request")
                     status = element.get("status") or {}

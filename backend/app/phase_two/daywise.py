@@ -133,12 +133,9 @@ class OptimizeInput(BaseModel):
 
 def road_options(state, entries):
     """Directed sourced road durations; no inferred fares or invented services."""
-    names = {}
-    for name, query, result in entries:
-        if name == "places":
-            for p in result.data if isinstance(result.data, list) else [result.data]:
-                if isinstance(p, Place):
-                    names[p.place_id] = p.name
+    from .identity import city_points
+    labels = list(dict.fromkeys(label for j in state["journeys"] for label in (j.origin, j.destination)))
+    names = {place.place_id: label for label, place in city_points(entries, labels).items()}
     options = {}
     for name, query, result in entries:
         if name != "maps":
@@ -161,15 +158,14 @@ def route_payload(state, entries):
     end = request.preferences.end_location or request.destinations[-1]
     end = request.origin if end.casefold() == "origin" else end
     labels = list(dict.fromkeys([request.origin, *request.destinations, end]))
-    locations, offers = {}, []
+    from .identity import city_points
+    locations = {label: {"id": label, "name": label,
+                         "latitude": p.location.latitude, "longitude": p.location.longitude,
+                         "timezone": "UTC", "country_code": "", "provider_reference": p.place_id}
+                 for label, p in city_points(entries, labels).items()}
+    offers = []
     for name, query, result in entries:
         data = result.data if isinstance(result.data, list) else [result.data]
-        if name == "places":
-            for item in data:
-                if isinstance(item, Place) and item.location and item.name in labels:
-                    locations[item.name] = {"id": item.name, "name": item.name,
-                        "latitude": item.location.latitude, "longitude": item.location.longitude,
-                        "timezone": "UTC", "country_code": "", "provider_reference": item.place_id}
         if name == "transport":
             for option in data:
                 if not isinstance(option, TransportOption) or not option.duration_s:
