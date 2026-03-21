@@ -145,11 +145,12 @@ def road_options(state, entries):
                 continue
             for journey in state["journeys"]:
                 if journey.mode == "car" and names.get(leg.origin_id) == journey.origin and names.get(leg.destination_id) == journey.destination:
-                    options.setdefault(journey.id, []).append(TransportOption(
+                    # A stable option ID must refer to one current, supported duration.
+                    options[journey.id] = [TransportOption(
                         id="road:" + journey.id, requested_mode="car", origin=journey.origin,
                         destination=journey.destination, departure_date=journey.departure_date,
                         duration_s=leg.duration_s, source_url="evidence:" + result.provider,
-                        warnings=["Road guidance only; fuel, tolls, parking and timetable unknown."]))
+                        warnings=["Road guidance only; fuel, tolls, parking and timetable unknown."])]
     return options
 
 

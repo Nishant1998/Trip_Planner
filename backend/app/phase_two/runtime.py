@@ -324,7 +324,10 @@ class SixAgentRuntime:
                         "continuation_token": result.continuation_token,
                         "continuation_tokens": result.continuation_tokens,
                     }
-                return planning_value(result)
+                reply = planning_value(result)
+                if name == "maps":
+                    reply["journey_guidance"] = planning_value(road_options(state, self.entries))
+                return reply
 
             tools.append(
                 AgentTool(
@@ -349,6 +352,8 @@ class SixAgentRuntime:
             "planning_profile": state["run"].planning_profile,
             **extra,
         }
+        if role == "transport_booking":
+            payload["journey_guidance"] = planning_value(road_options(state, self.entries))
         if state["run"].planning_profile != "full":
             payload["spending_targets"] = json_value(spending_targets(state["user_preferences"]))
             payload["daily_time_policy"] = dict(DAILY_TIME_POLICY)
@@ -690,6 +695,8 @@ class SixAgentRuntime:
 
     async def transport(self, state):
         output = await self.invoke("transport_booking", state)
+        labels = list(dict.fromkeys(label for j in state["journeys"] for label in (j.origin, j.destination)))
+        sourced_cities = city_points(self.entries, labels)
         records, routes = [], {}
         for journey in state.get("journeys", []):
             if (state["routing"].repair_started
@@ -726,6 +733,18 @@ class SixAgentRuntime:
                         status=FactState.ESTIMATED if result.status != "ok" else FactState.VERIFIED)
                         for name, query, result in self.entries if name == "transport" and selected
                         and any(o.id == selected.id for o in result.data or [])]
+            if journey.mode == "car" and selected:
+                origin = sourced_cities.get(journey.origin)
+                destination = sourced_cities.get(journey.destination)
+                evidence = [Evidence(
+                    provider=result.provider, retrieved_at=result.retrieved_at,
+                    reference=f"{origin.place_id}->{destination.place_id}", status=FactState.ESTIMATED,
+                ) for name, query, result in self.entries if name == "maps" and origin and destination
+                    and any(isinstance(leg, RouteLeg) and leg.status == "ok"
+                            and leg.mode.upper() == "DRIVE"
+                            and leg.origin_id == origin.place_id and leg.destination_id == destination.place_id
+                            and leg.duration_s == selected.duration_s
+                            for leg in (result.data if isinstance(result.data, list) else [result.data]))]
             records.append(
                 TransportRecord(
                     evidence=evidence,

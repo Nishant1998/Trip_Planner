@@ -14,12 +14,18 @@ def durable_plan(plan):
     def synthetic(record):
         evidence = record.get("evidence", [])
         return bool(evidence) and all(e.get("provider") == "synthetic_level1" for e in evidence)
+    def google_road(record):
+        return record.get("mode") == "car" and any(
+            evidence.get("provider") == "google_routes" for evidence in record.get("evidence", []))
+    has_road_guidance = any(google_road(record) for record in result.get("transport", []))
     # Conservative default: no Google-derived display fields are kept durably.
     for destination in result.get("destinations", []):
         destination["location"] = None
     for day in result.get("days", []):
         day["daily_distance_m"] = None
         day["title"], day["summary"] = "", ""
+        if has_road_guidance:
+            day["workload"] = None  # May contain arithmetic derived from ephemeral route durations.
         for event in day.get("events", []):
             if synthetic(event):
                 continue  # Locally authored fixture evidence has no provider retention restriction.
@@ -38,7 +44,7 @@ def durable_plan(plan):
             event["evidence"] = []
     # Google transit facts are also not a permanent reusable timetable cache.
     for transport in result.get("transport", []):
-        if transport.get("mode") in ("train", "bus") and not synthetic(transport):
+        if (transport.get("mode") in ("train", "bus") or google_road(transport)) and not synthetic(transport):
             transport["selected"], transport["alternatives"] = None, []
             transport["status"] = "unavailable"
     # LLM narrative can repeat restricted source content; regenerate/display only in-run.
