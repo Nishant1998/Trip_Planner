@@ -259,14 +259,16 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
         }
 
         return {
-          time: item.time || item.start_time || '10:00 AM',
+          time: item.time || item.start_time || 'Time to confirm',
           title: item.title || item.name || 'Activity',
           description: item.description || '',
           category: item.kind || 'activity',
-          duration: item.duration || '1.5 hrs',
-          cost: item.estimated_cost?.maximum
-            ? `₹${Number(item.estimated_cost.maximum).toLocaleString('en-IN')}`
-            : item.estimated_cost || item.cost || 'Included',
+          duration: item.duration || 'Duration to confirm',
+          cost: typeof item.estimated_cost === 'number'
+            ? `${p.currency || 'INR'} ${item.estimated_cost.toLocaleString()}`
+            : item.estimated_cost?.maximum != null
+              ? `${p.currency || 'INR'} ${Number(item.estimated_cost.maximum).toLocaleString()}`
+              : typeof item.estimated_cost === 'string' ? item.estimated_cost : item.cost || 'Cost to confirm',
           driveTime: drive,
           mapUrl: item.place?.google_maps_url || item.map_url,
           imageUrl: item.image_url || item.image || item.place?.image_url,
@@ -287,17 +289,17 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
         stayRecommendation: d.stayRecommendation || {
           name: `Choose accommodation near ${d.base_stop || 'your planned area'}`,
           type: 'Accommodation to confirm',
-          pricePerNight: d.daily_cost || 'Included in budget',
+          pricePerNight: 'Nightly price to confirm',
           image: placeholderCover(d.base_stop || d.title || `day-${idx + 1}`),
         },
       }
     })
 
     const normalizedStays = staysRaw.map((s: any) => ({
-      name: s.name || s.stop || 'Luxury Stay',
+      name: s.name || s.stop || 'Accommodation to confirm',
       type: s.description || s.type || 'Accommodation',
-      pricePerNight: s.pricePerNight || s.estimated_cost || 'Included',
-      rating: s.rating || 4.8,
+      pricePerNight: s.pricePerNight || 'Nightly price to confirm',
+      rating: s.rating ?? undefined,
       image: s.image || s.image_url || placeholderCover(s.name || s.stop || 'stay'),
     }))
     const rawAlerts = [...(deck.alerts || []), ...(p.warnings || []), ...(p.blocking_issues || [])]

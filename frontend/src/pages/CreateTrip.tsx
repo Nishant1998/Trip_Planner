@@ -1442,7 +1442,7 @@ const CreateTrip: React.FC = () => {
                             </div>
                             <h3 className="text-base sm:text-lg font-black">Interactive Route & Waypoints</h3>
                             <p className="text-xs text-slate-300 mt-0.5">
-                              Numbered stops arranged to eliminate backtracking and reduce daily drive time.
+                              Selected places in itinerary order. Confirm directions and travel times before leaving.
                             </p>
                           </div>
 
@@ -1463,7 +1463,7 @@ const CreateTrip: React.FC = () => {
                         <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
                           Chronological Waypoint Stops:
                         </h4>
-                        {plan.days.flatMap((d) => d.activities).map((act, idx) => (
+                        {plan.days.flatMap((d) => d.activities).filter((act) => act.hasPlace !== false).map((act, idx) => (
                           <div
                             key={idx}
                             className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-white hover:border-indigo-200 transition shadow-2xs gap-3"
