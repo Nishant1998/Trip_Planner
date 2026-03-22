@@ -267,6 +267,8 @@ class BudgetGuidance(BaseModel):
 
 
 class TripPlanV2(BaseModel):
+    local_tips: list[str] = Field(default_factory=list)
+    packing_list: list[str] = Field(default_factory=list)
     planning_profile: Literal["full", "daywise", "discovery"] = "full"
     route_profiles: dict[str, Any] = Field(default_factory=dict)
     schema_version: Literal["trip_plan.v2"] = "trip_plan.v2"

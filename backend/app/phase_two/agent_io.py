@@ -73,6 +73,21 @@ class ItineraryOutput(Output):
     warnings: list[str] = Field(default_factory=list)
 
 
+class EventCopy(Output):
+    event_id: str
+    description: str = Field(min_length=1, max_length=800)
+
+
+class DayCopy(Output):
+    day: int = Field(ge=1)
+    title: str = Field(min_length=1, max_length=120)
+    summary: str = Field(min_length=1, max_length=600)
+    events: list[EventCopy] = Field(default_factory=list)
+
+
 class PresentationOutput(Output):
     title: str
     overview: str
+    days: list[DayCopy] = Field(default_factory=list)
+    local_tips: list[str] = Field(default_factory=list, max_length=6)
+    packing_list: list[str] = Field(default_factory=list, max_length=6)

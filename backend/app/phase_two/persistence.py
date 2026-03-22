@@ -50,6 +50,7 @@ def durable_plan(plan):
     # LLM narrative can repeat restricted source content; regenerate/display only in-run.
     if "trip_summary" in result:
         result["trip_summary"]["overview"] = ""
+    result["local_tips"], result["packing_list"] = [], []
     if result.get("route_profiles", {}).get("evidence_provider") != "synthetic_level1":
         result["route_profiles"] = {}
     return result

@@ -42,6 +42,7 @@ from .contracts import (
     WeatherRecord,
 )
 from .budget import spending_targets
+from .editorial import apply_editorial_copy
 from .itinerary_fallback import fallback_days
 from .validation import validate_plan
 
@@ -497,6 +498,8 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
                if activities else "Sightseeing still needs planning; this outline is not a finished itinerary. ")
             + "Review unresolved items and confirm bookings and total costs before travelling."
         )
+        display_days = state["itinerary"]
+        local_tips, packing_list = [], []
         if handlers.presentation:
             try:
                 remaining = (run.deadline_at - datetime.now(UTC)).total_seconds() - 5
@@ -513,9 +516,11 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
                             }
                         )
                     ),
-                    min(25, remaining),
+                    min(40, remaining),
                 )
+                display_days = apply_editorial_copy(state["itinerary"], presentation)
                 title, overview = presentation.title, presentation.overview
+                local_tips, packing_list = presentation.local_tips, presentation.packing_list
             except Exception:  # noqa: BLE001 - narrative is optional; retain validated facts
                 warnings.append(
                     PlanWarning(
@@ -547,7 +552,9 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
             destinations=state["destinations"],
             accommodation=state["hotels"],
             transport=state["transport_options"],
-            days=state["itinerary"],
+            days=display_days,
+            local_tips=local_tips,
+            packing_list=packing_list,
             total_estimated_cost=costs,
             budget_guidance=spending_targets(request),
             warnings=warnings,

@@ -77,7 +77,16 @@ if unavailable, revise the day instead of carrying an unstated luggage assumptio
 Do not assign a venue on a closed weekday. Preserve gaps/buffers for local movement,
 meal breaks and contingency. End travel-only days at the requested endpoint without
 adding sightseeing in an unrequested city. Use spending_targets only as suggested
-full-party limits; unknown hotel, entry and transport prices remain unpriced.""",
+full-party limits; unknown hotel, entry and transport prices remain unpriced.
+Use selection_reason as editorial context, not proof of opening or access. Choose
+a compact geographic cluster for each day. A sourced exterior viewpoint can be a
+20-45 minute planning allowance; do not give every short stop a museum-sized slot.
+If the available capacity permits, pair a major attraction with a short nearby stop.
+Do not shorten a mandatory visit just to make the plan look fuller. Give each event
+a useful two-sentence description: what to do, then a practical pacing suggestion.
+Explain sparse days honestly. Prefer pleasant, direct wording to internal terms
+like allocation, source-backed, capacity or constraint. Keep factual uncertainty
+specific: an unverified ticket price does not make the attraction itself unknown.""",
     "accommodation": """Search exact requested stays, guests and rooms. Match lodging,
 location, accessibility and budget preferences using returned facts only. Select IDs
 from the results for each stay request. An adult-only indicative quote is not the
@@ -92,13 +101,32 @@ Select returned option IDs per journey. Maps does not prove accessibility. Poll 
 snapshot tokens, preserving completed legs; never re-collect pending searches.
 Resolve each requested directed pair in its specified mode. Do not substitute
 another mode unless the confirmed journey request is revised first.""",
-    "response_aggregator": """Write only a concise title and overview of the approved
-plan. Do not add facts, times, attractions, prices or change selections. Do not claim
-complete/verified/within-budget when warnings or unknown costs exist. Explain material
-limitations and the most important confirmations still needed. Python preserves
-the authoritative plan and all warnings separately. Write an inviting, practical
-overview in three short sentences (45-70 words): the trip's character, the daily flow, and the
-important bookings still needed. Do not replace the overview with a warning dump
-or promise the spending targets are achievable. A confirmed user requirement is not
-a confirmed visit or booking. Warnings are displayed separately.""",
+    "response_aggregator": """You are the travel editor of the approved itinerary.
+Return an inviting title, a 45-70 word overview, and editorial copy for the existing
+days and events using their exact day numbers and event IDs. Python alone owns the
+schedule, places, order, visit allowances, dates, costs and warnings. You cannot add,
+remove, reorder or replace events. Return no new attractions or invented logistics.
+For each day give a short theme title and two sentences describing its flow. For
+each event write 25-55 useful words: what the traveler will do, why it fits their
+interests, and how to pace it. Use supplied event reasons and place selection_reason
+as context, not independent evidence. Never infer gallery access, opening hours,
+ticket inclusions, cuisine, accessibility or reservations from a place name.
+For example, if an approved event is a museum visit: 'Take your time with the open
+galleries rather than trying to see everything. Keep the rest of the morning clear
+for the collections that interest you most.' This is a style example, not a new stop.
+For meals respect dietary preferences without claiming a restaurant is verified.
+For luggage and check-in preserve any required confirmations. Do not imply a room
+or storage is available. For unscheduled days describe flexible periods, never add
+clock times. Do not turn required confirmations into promises. Preserve any material
+closure, access or timing caveat in the original event reason. Keep travel-only and
+unallocated days honest; an unplanned day is not a curated free day.
+Add 3-5 practical local_tips and 3-5 packing_list items only when useful. These must
+be general recommendations tied to the request, not new factual claims about venues,
+weather, prices, visa rules or safety. Empty lists are better than invented facts.
+Put routine booking reminders in tips rather than repeating them in every paragraph.
+Do not claim complete, verified or within-budget when warnings or unknown costs
+exist. Spending targets are suggestions, not quotes. Keep the overview focused on
+the trip's character and flow, with a brief confirmation reminder; not a warning dump.
+All warnings remain separately visible. Write naturally and concretely, not in sales
+superlatives or engineering jargon. This output is generated travel advice, not a booking.""",
 }

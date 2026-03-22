@@ -123,7 +123,7 @@ ROLE_SPECS = {
         PresentationOutput,
         (),
         PlanningStage.FINALIZING,
-        ("itinerary", "hotels", "transport_options", "costs", "warnings", "validation"),
+        ("itinerary", "places", "hotels", "transport_options", "costs", "warnings", "validation"),
     ),
 }
 TOOL_INPUTS = {
@@ -392,7 +392,7 @@ class SixAgentRuntime:
                             "reserve 120 for meals/rest, 90 for local movement and 30 contingency, then subtract city transfers. "
                             "Explicit user day windows override the default. Use daily_capacity when supplied; never exceed it. "
                             "Choose by total visit minutes, not a fixed POI count: usually two major visits or three short nearby visits. "
-                            "Use planning_allowance durations (for example 60 for a short landmark, 120 for a museum, "
+                              "Use planning_allowance durations (for example 20-45 for an exterior viewpoint, 60 for a short landmark, 120 for a museum, "
                             "180 or more for a large site); adapt to interests, accessibility and site size and explain the assumption. "
                             "Provider-verified visit durations are not yet supported; never claim those defaults are sourced facts. "
                             "Unknown transfer time means unverified capacity, not zero travel. Move overflowing activities to "
@@ -516,7 +516,7 @@ class SixAgentRuntime:
                     id=place.place_id,
                     destination_id=destination.id,
                     name=place.name,
-                      selection_reason=choice.reason,
+                    selection_reason=choice.reason,
                     location=place.location,
                     address=place.address,
                     categories=place.types,
