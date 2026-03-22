@@ -516,6 +516,7 @@ class SixAgentRuntime:
                     id=place.place_id,
                     destination_id=destination.id,
                     name=place.name,
+                      selection_reason=choice.reason,
                     location=place.location,
                     address=place.address,
                     categories=place.types,

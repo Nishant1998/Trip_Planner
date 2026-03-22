@@ -116,6 +116,7 @@ class PlaceRecord(BaseModel):
     id: str
     destination_id: str
     name: str
+    selection_reason: str = ""  # Editorial context, not a provider-verified fact.
     location: Coordinates | None = None
     address: str | None = None
     categories: list[str] = Field(default_factory=list)
