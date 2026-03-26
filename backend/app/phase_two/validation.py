@@ -159,7 +159,9 @@ def validate_plan(state):
             ):
                 issue("transfer_missing", "A change of base needs an allocated journey.",
                       str(day.day), "allocation")
-        if not day.events or all(e.kind == "unallocated" for e in day.events):
+        has_unplanned_time = any(e.kind == "unallocated" for e in day.events)
+        has_day_plan = any(e.kind in ("activity", "travel") for e in day.events)
+        if not day.events or (has_unplanned_time and not has_day_plan):
             issue(
                 "day_unallocated", "This day has no supported schedule.", str(day.day)
             )

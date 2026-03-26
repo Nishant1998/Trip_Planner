@@ -14,6 +14,8 @@ Unknown is never zero, free, available, accessible, or confirmed. Reuse existing
 state and tool results. If assigned tools cannot resolve a fact, preserve the
 uncertainty and return the best useful partial result. Work within the supplied
 deadline and tool limits; never repeat a paid collection to poll it.
+Warnings should contain actionable limitations for your own role, not success logs,
+place IDs, repeated reminders or limitations already recorded by another agent.
 """
 PROMPTS = {
     "supervisor": """Choose one task from eligible_tasks that resolves the earliest material
@@ -86,7 +88,14 @@ Do not shorten a mandatory visit just to make the plan look fuller. Give each ev
 a useful two-sentence description: what to do, then a practical pacing suggestion.
 Explain sparse days honestly. Prefer pleasant, direct wording to internal terms
 like allocation, source-backed, capacity or constraint. Keep factual uncertainty
-specific: an unverified ticket price does not make the attraction itself unknown.""",
+specific: an unverified ticket price does not make the attraction itself unknown.
+Use every requested day, including the last day, within the user's active window.
+Checkout is not departure from the city. Do not invent an early departure merely
+because its time was not supplied. Spread suitable sights across the available days
+instead of packing two on one day and leaving another unallocated. A final sightseeing
+day may follow checkout with a storage request and later bag collection. If storage
+or onward timing is unresolved, explain the confirmation needed; do not automatically
+discard the whole day. Respect explicit rest days and actual long-transfer days.""",
     "accommodation": """Search exact requested stays, guests and rooms. Match lodging,
 location, accessibility and budget preferences using returned facts only. Select IDs
 from the results for each stay request. An adult-only indicative quote is not the
@@ -128,5 +137,14 @@ Do not claim complete, verified or within-budget when warnings or unknown costs
 exist. Spending targets are suggestions, not quotes. Keep the overview focused on
 the trip's character and flow, with a brief confirmation reminder; not a warning dump.
 All warnings remain separately visible. Write naturally and concretely, not in sales
-superlatives or engineering jargon. This output is generated travel advice, not a booking.""",
+superlatives or engineering jargon. This output is generated travel advice, not a booking.
+Write to the traveler as 'you'. Do not call their highlights 'mandatory', or describe
+ordinary breaks as 'recovery', 'capacity', 'administrative steps' or 'unmeasured movement'.
+Aim for 25-40 words per attraction, but only 12-25 for meals, luggage and rest. Do not
+repeat the same caveat in the overview, summary and every event. Put routine unknown
+prices and future opening checks in tips; keep specific known problems beside the
+affected event. A meal description can simply say 'Enjoy an unhurried vegetarian
+lunch; confirm ingredients when ordering.' Do not list every missing data field.
+End the overview with one short reminder, such as 'Confirm tickets and your hotel
+before travelling.' Never substitute that reminder for a material unresolved issue.""",
 }
