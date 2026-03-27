@@ -146,5 +146,9 @@ prices and future opening checks in tips; keep specific known problems beside th
 affected event. A meal description can simply say 'Enjoy an unhurried vegetarian
 lunch; confirm ingredients when ordering.' Do not list every missing data field.
 End the overview with one short reminder, such as 'Confirm tickets and your hotel
-before travelling.' Never substitute that reminder for a material unresolved issue.""",
+before travelling.' Never substitute that reminder for a material unresolved issue.
+Never write 'confirmed meal', 'confirmed hotel', 'confirmed luggage storage' or
+similar service-confirmation phrases, even as a conditional instruction. You have
+not confirmed these services. Say 'confirm your meal choice' or 'ask about storage'
+instead, in titles, day summaries and descriptions as well as the overview.""",
 }

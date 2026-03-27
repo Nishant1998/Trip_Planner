@@ -1,9 +1,10 @@
 """Small model outputs: factual records come from tool evidence, not the LLM."""
 
 from datetime import datetime
+import re
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .contracts import JourneyRequest, RouteRequirement, StayRequest
 
@@ -91,3 +92,15 @@ class PresentationOutput(Output):
     days: list[DayCopy] = Field(default_factory=list)
     local_tips: list[str] = Field(default_factory=list, max_length=6)
     packing_list: list[str] = Field(default_factory=list, max_length=6)
+
+    @model_validator(mode="after")
+    def no_service_confirmation(self) -> "PresentationOutput":
+        # The writer has no booking tool. Prefer requests to confirm, even in
+        # conditional wording, over phrases readers can mistake for reservations.
+        text = [self.title, self.overview, *self.local_tips, *self.packing_list]
+        for day in self.days:
+            text.extend([day.title, day.summary, *(event.description for event in day.events)])
+        pattern = r"\bconfirmed\s+(?:vegetarian\s+)?(?:meals?|lunch|dinner|hotels?|rooms?|accommodation|luggage|storage|reservations?|tickets?)\b"
+        if any(re.search(pattern, item, re.IGNORECASE) for item in text):
+            raise ValueError("Unsupported service confirmation; write a request to confirm instead")
+        return self
