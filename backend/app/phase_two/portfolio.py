@@ -20,6 +20,12 @@ section{background:white;border:1px solid var(--line);border-radius:16px;padding
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin:16px 0}.metric{padding:12px;border-radius:8px;background:#f3f5ef}.metric dt{font-size:13px;color:var(--muted)}.metric dd{margin:5px 0 0;font-weight:700}
 details{margin:16px 0}summary{cursor:pointer;padding:10px 0;font-weight:600}table{width:100%;border-collapse:collapse}td,th{padding:12px 8px;border-bottom:1px solid var(--line);text-align:left;overflow-wrap:anywhere}th{font-size:14px}
 li{margin-bottom:8px}footer{font-size:14px;color:var(--muted)}
+header .overview{font-size:18px;max-width:780px;line-height:1.8}header .banner{font-size:13px;background:#f0f3ee;border-left-color:var(--ink)}
+.trip-facts{display:flex;flex-wrap:wrap;gap:12px 28px;padding:18px 0;border-top:1px solid var(--line);font-size:14px}
+.day-card{padding:30px}.day-card>h2{color:#965038}.activity{margin-left:5px;padding:14px 0 18px 24px;border-top:0;border-left:1px solid var(--line);position:relative}
+.activity:before{content:'';position:absolute;left:-5px;top:22px;width:9px;height:9px;background:var(--ink);border-radius:50%}
+.activity h3{margin-top:0}.activity .eyebrow{font-size:10px;color:var(--muted);margin:0 0 4px}.activity p{max-width:760px}
+.critical{background:#fff1d2;border:1px solid #d9ac72;border-radius:8px;padding:14px 18px;font-size:14px;margin-top:16px}
 @media(max-width:600px){main{padding:16px 14px 40px}section{padding:18px}h2{font-size:24px}td,th{padding:8px 4px;font-size:14px}}
 @media print{body{background:white}nav{display:none}main{max-width:none}section{break-inside:avoid;border-radius:0}details{display:block}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
@@ -45,9 +51,13 @@ def render_plan(payload):
     notice = 'Sample data · Portfolio demonstration. Hotel and transport amounts are test evidence, not live quotes.' if sample else 'Draft travel plan · Prices and availability need confirmation before booking.'
     if any(poi['name'] == 'Selected place (refresh details)' for day in view['days'] for poi in day['pois']):
         notice += ' Saved source details need refreshing; place names and explanations are incomplete in this view.'
-    sections = [f'<header><p class="eyebrow">Your travel notebook</p><h1>{text(summary["title"])}</h1>',
-        f'<p>{text(summary["start_date"])} → {text(summary["end_date"])} · {len(view["days"])} days · {text(summary["adults"])} adults · {text(summary["children"])} children</p>',
-        f'<p>{text(summary["overview"])}</p><p class="banner">{notice}</p>',
+    critical = list(dict.fromkeys(w['message'] for w in view['warnings'] if w.get('severity') == 'error'))
+    budget_label = f'{text(summary["currency"] or "")} {summary["budget"]:,.0f}' if summary['budget'] is not None else 'Not specified'
+    sections = [f'<header><p class="eyebrow">Waypoint · Your travel notebook</p><h1>{text(summary["title"])}</h1>',
+        f'<p class="overview">{text(summary["overview"])}</p>',
+        f'<div class="trip-facts"><span>{text(summary["start_date"])} → {text(summary["end_date"])}</span><span>{len(view["days"])} days · {text(summary["adults"])} adults · {text(summary["children"])} children</span><span>Budget target: {budget_label}</span></div>',
+        f'<p class="banner">{notice}</p>',
+        ('<aside class="critical" role="note"><strong>Resolve before booking</strong><ul>' + ''.join('<li>' + text(item) + '</li>' for item in critical) + '</ul></aside>' if critical else ''),
         f'<p class="muted">Plan status: {label(view["source_status"])}. Visit durations and daily allowances are estimates unless explicitly sourced.</p></header>',
         '<nav aria-label="Itinerary sections">' + ''.join(f'<a href="#day-{d["day"]}">Day {d["day"]}</a>' for d in view["days"]) + '<a href="#stays">Stays</a><a href="#transfers">Transfers</a><a href="#costs">Budget</a><a href="#warnings">Before you go</a></nav>']
     for day in view["days"]:
@@ -56,27 +66,34 @@ def render_plan(payload):
             content.append(f'<h3>{text(day["title"])}</h3>')
         if day["summary"]:
             content.append(f'<p>{text(day["summary"])}</p>')
-        for poi in day["pois"]:
+        for poi in day["timeline"]:
             basis = {"planning_allowance": "Estimated visit allowance", "provider": "Source claim; see validation warnings", "unknown": "Visit time unconfirmed"}.get(poi["duration_basis"], "Visit time unconfirmed")
-            period = f'{label(poi["period"])} · Flexible order · ' if poi["period"] else ''
-            content.append(f'<article class="activity"><h3>{text(poi["name"])}</h3><p>{text(poi["reason"])}</p><p class="tag">{period}{text(minutes(poi["visit_minutes"]))} · {basis}</p></article>')
+            period = f'{label(poi["period"])} · Flexible timing' if poi["period"] else ''
+            allowance = f'{text(minutes(poi["visit_minutes"]))} · {basis}' if poi['visit_minutes'] is not None else ''
+            detail = ' · '.join(part for part in (period, allowance) if part)
+            content.append(f'<article class="activity"><p class="eyebrow">{label(poi["kind"])}</p><h3>{text(poi["title"])}</h3><p>{text(poi["reason"])}</p>')
+            if detail:
+                content.append(f'<p class="tag">{detail}</p>')
+            content.append('</article>')
         if day["content_status"] == "pending":
             content.append('<p class="banner">Activities still need planning for this day.</p>')
-        for event in day["other_events"]:
-            content.append(f'<p><b>{text(event["kind"])}: {text(event["title"])}</b> — {text(event["reason"])}</p>')
         if day["workload"]:
             w = day["workload"]
             status = {"within_allowance": "Within planning allowance", "travel_only": "Travel-only day", "overloaded": "Needs fewer activities", "unknown": "Workload unverified"}.get(w["status"], w["status"])
-            content.append(f'<p class="tag">{text(status)}</p><dl class="metrics">')
+            content.append(f'<p class="tag">{text(status)}</p><details><summary>Time allowances &amp; planning assumptions</summary><dl class="metrics">')
             fields = [("Active day", "envelope_minutes"), ("Time for visits", "poi_capacity_minutes"),
                       ("Planned visits", "visit_minutes"), ("City transfers", "transfer_minutes"),
                       ("Meals / rest" if "local_movement_minutes" in w else "Combined rest / movement buffer", "buffer_minutes")]
             fields += [(title, key) for title, key in [("Local movement", "local_movement_minutes"), ("Contingency", "contingency_minutes")] if key in w]
             content.extend(f'<div class="metric"><dt>{title}</dt><dd>{text(minutes(w.get(key)))}</dd></div>' for title, key in fields)
-            content.append('</dl><details><summary>How this day was planned</summary><p>' + text(w.get("basis", "Saved planning allowances; actual durations remain unverified.")) + '</p></details>')
+            content.append('</dl><p>' + text(w.get("basis", "Saved planning allowances; actual durations remain unverified.")) + '</p></details>')
         else:
             content.append('<p class="muted">Daily time budget has not been checked.</p>')
-        sections.append(f'<section id="day-{day["day"]}">' + ''.join(content) + '</section>')
+        sections.append(f'<section class="day-card" id="day-{day["day"]}">' + ''.join(content) + '</section>')
+    for heading, key in [('Practical tips', 'local_tips'), ('What to pack', 'packing_list')]:
+        if view[key]:
+            sections.append('<section><h2>' + heading + '</h2><ul>' + ''.join(
+                '<li>' + text(item) + '</li>' for item in view[key]) + '</ul></section>')
     hotels = ['<h2>Where to stay</h2>']
     for h in view["accommodation"]:
         s, o = h["stay_request"], h["selected"] or {}
@@ -139,7 +156,7 @@ def render_plan(payload):
         targets.append(f'</table><p>{guide["adults"]} adults · {guide["children"]} children · {guide["nights"]} nights. Actual budget fit is still {text(c["budget_status"])}.</p>')
         sections.append('<section>' + ''.join(targets) + '</section>')
     warnings = list(dict.fromkeys(w["message"] for w in view["warnings"]))
-    sections.append('<section id="warnings"><h2>Confirm before travelling</h2><ul>' + ''.join('<li>' + text(w) + '</li>' for w in warnings) + '</ul><p>Recheck opening hours, entry requirements, accessibility and bookings before departure.</p></section>')
+    sections.append('<section id="warnings"><h2>Before you go</h2><p>Recheck opening hours, entry requirements, accessibility and bookings before departure.</p><details><summary>All planning notes &amp; confirmations (' + str(len(warnings)) + ')</summary><ul>' + ''.join('<li>' + text(w) + '</li>' for w in warnings) + '</ul></details></section>')
     sections.append('<footer>Keep this plan with you: use your browser’s Print / Save as PDF. No bookings have been made.</footer>')
     return '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>' + text(summary['title']) + ' · Trip planner</title><style>' + STYLE + '</style></head><body><main>' + ''.join(sections) + '</main></body></html>'
 

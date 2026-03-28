@@ -33,7 +33,7 @@ const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-xs border-b border-gray-200 py-3">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-wrap gap-3 items-center justify-between">
         {/* Brand Logo with standard Lucide icon */}
         <Link to="/" className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25 group-hover:scale-105 transition-transform">

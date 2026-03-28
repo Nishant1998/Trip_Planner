@@ -135,8 +135,8 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
             ? money(record.selected.price, record.selected.currency || currency) : 'Nightly price to confirm',
           image: placeholderCover(record.stay_request.destination_id),
         })),
-        localTips: [],
-        packingList: [],
+        localTips: (p.local_tips || []).filter((tip: unknown): tip is string => typeof tip === 'string' && tip.trim().length > 0),
+        packingList: (p.packing_list || []).filter((item: unknown): item is string => typeof item === 'string' && item.trim().length > 0),
         alerts: Array.from(new globalThis.Map<string, { severity: string; message: string }>(
           [...(p.warnings || []), ...(response.warnings || []).map((message: string) => ({ message, severity: 'warning' }))]
             .map((warning: any) => [warning.message, { severity: warning.severity || 'warning', message: warning.message }]),

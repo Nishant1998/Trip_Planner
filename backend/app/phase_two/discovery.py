@@ -53,6 +53,9 @@ def discovery_plan(payload: dict[str, Any]) -> dict[str, Any]:
             "title": day.title, "summary": day.summary,
             "workload": day.workload,
             "other_events": other_events,
+            "timeline": [event.model_dump(mode="json", include={
+                "id", "kind", "title", "reason", "period", "visit_minutes", "duration_basis",
+            }) for event in day.events],
             "content_status": "suggestions" if meaningful else "pending",
             "cost": _cost_view(day.daily_cost),
         })
@@ -71,5 +74,7 @@ def discovery_plan(payload: dict[str, Any]) -> dict[str, Any]:
             item.destination_id)) for item in plan.weather],
         "cost": _cost_view(plan.total_estimated_cost),
         "budget_guidance": plan.budget_guidance.model_dump(mode="json") if plan.budget_guidance else None,
+        "local_tips": plan.local_tips,
+        "packing_list": plan.packing_list,
         "warnings": deepcopy(payload.get("warnings", [])),
     }

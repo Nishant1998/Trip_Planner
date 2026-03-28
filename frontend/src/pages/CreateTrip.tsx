@@ -1201,7 +1201,7 @@ const CreateTrip: React.FC = () => {
                 )}
 
                 {(plan.alerts.length > 0 || plan.budgetHealth.withinBudget !== undefined) && (
-                  <div className="px-4 sm:px-5 py-3 border-b border-slate-200 bg-slate-50 space-y-2 print:hidden">
+                  <div className="px-4 sm:px-5 py-3 border-b border-slate-200 bg-slate-50 space-y-2">
                     {plan.budgetHealth.withinBudget !== undefined && (
                       <div className={`text-xs font-bold rounded-xl px-3 py-2 border ${
                         plan.budgetHealth.withinBudget
@@ -1211,23 +1211,23 @@ const CreateTrip: React.FC = () => {
                         {plan.budgetHealth.withinBudget ? 'Budget check: this itinerary is within your target.' : 'Budget check: this itinerary may exceed your target.'}
                       </div>
                     )}
-                    {plan.alerts.slice(0, 1).map((alert, index) => (
+                    {plan.alerts.filter((alert, index) => alert.severity === 'error' || index === 0).map((alert, index) => (
                       <div key={`${alert.message}-${index}`} className="text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
                         {alert.message}
                       </div>
                     ))}
-                    {plan.alerts.length > 1 && (
+                    {plan.alerts.some((alert, index) => alert.severity !== 'error' && index > 0) && (
                       <details className="text-xs text-amber-900">
-                        <summary className="cursor-pointer font-semibold">Show {plan.alerts.length - 1} more planning notes</summary>
+                        <summary className="cursor-pointer font-semibold">More planning notes &amp; confirmations</summary>
                         <ul className="mt-2 space-y-2 max-h-48 overflow-y-auto">
-                          {plan.alerts.slice(1).map((alert, index) => <li key={`${index}-${alert.message}`}>{alert.message}</li>)}
+                          {plan.alerts.filter((alert, index) => alert.severity !== 'error' && index > 0).map((alert, index) => <li key={`${index}-${alert.message}`}>{alert.message}</li>)}
                         </ul>
                       </details>
                     )}
                   </div>
                 )}
 
-                <div className="px-4 sm:px-5 py-2.5 border-b border-indigo-100 bg-indigo-50 text-xs text-indigo-900 print:hidden">
+                <div className="px-4 sm:px-5 py-2.5 border-b border-indigo-100 bg-indigo-50 text-xs text-indigo-900">
                   <span className="font-bold">Before booking:</span> This AI-generated itinerary is a planning draft. Confirm routes, prices, opening hours, and reservations independently.
                 </div>
                 {plan.displayRefreshRequired && Boolean(plan.placeIds?.length) && (
@@ -1530,9 +1530,10 @@ const CreateTrip: React.FC = () => {
                     <div className="bg-indigo-50/60 rounded-2xl p-5 border border-indigo-100 print:bg-white print:border-slate-300">
                       <h3 className="font-bold text-indigo-900 print:text-slate-900 text-sm mb-3 flex items-center gap-2">
                         <Info className="w-4 h-4 text-indigo-600" />
-                        <span>💡 Local Advice & Cultural Guidelines</span>
+                        <span>Practical travel tips</span>
                       </h3>
                       <ul className="space-y-2.5 text-xs text-indigo-900 print:text-slate-700">
+                        {plan.localTips.length === 0 && <li>No additional travel tips are available for this plan.</li>}
                         {plan.localTips.map((tip, idx) => (
                           <li key={idx} className="flex items-start gap-2.5">
                             <span className="text-indigo-600 font-bold shrink-0">•</span>
@@ -1548,9 +1549,11 @@ const CreateTrip: React.FC = () => {
                         <span>🎒 Packing Checklist</span>
                       </h3>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {plan.packingList.length === 0 && <p className="text-xs text-slate-600">No packing suggestions are available for this plan.</p>}
                         {plan.packingList.map((item, idx) => (
                           <button
                             key={idx}
+                            aria-pressed={Boolean(checkedItems[idx])}
                             onClick={() => togglePackingCheck(idx)}
                             className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-emerald-100/50 text-left transition cursor-pointer text-xs text-emerald-950 print:text-slate-800 font-medium"
                           >
