@@ -61,6 +61,7 @@ class TripListResponse(BaseModel):
 
 class InitTripRequest(BaseModel):
     text: str | None = None
+    client_message_id: str | None = Field(default=None, min_length=1, max_length=128)
     message: dict[str, Any] | None = (
         None  # Compatible with nested { text: "..." } payloads
     )
@@ -222,7 +223,10 @@ def register_trip_routes(
 
         # Submit user message to runtime
         try:
-            await runtime.submit_user_message(trip.id, text, user_id=user.id)
+            await runtime.submit_user_message(
+                trip.id, text, user_id=user.id,
+                client_message_id=payload.client_message_id,
+            )
         except TripBusyError as exc:
             raise HTTPException(status_code=409, detail=exc.message) from exc
 
@@ -363,6 +367,12 @@ def register_trip_routes(
         async def event_generator() -> AsyncIterator[str]:
             queue = await event_bus.subscribe(trip.id)
             try:
+                processing = runtime.is_processing(trip.id)
+                yield format_sse("status", {
+                    "status": "processing" if processing else "idle",
+                    "message": "Working on your trip details" if processing else "",
+                    "turn_complete": not processing,
+                })
                 checkpoint = repository.get_pending_checkpoint(trip.id)
                 if checkpoint:
                     yield format_sse("checkpoint", checkpoint.payload)

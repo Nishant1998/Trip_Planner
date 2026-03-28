@@ -30,28 +30,11 @@ import {
   LogIn,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { apiFetch } from '../lib/api'
+import { apiFetch, readApiError } from '../lib/api'
 import { getWelcomeMessage } from '../lib/welcome'
 import { parseBackendPlan, placeholderCover, type NormalizedPlan } from '../lib/plan'
 import { getPlanningState } from '../lib/planning-status'
-
-interface Message {
-  id: string | number
-  role: 'assistant' | 'user' | 'system'
-  content?: string
-  text?: string
-  timestamp?: string
-  suggestions?: string[]
-  isWelcome?: boolean
-  showConfirmationCard?: boolean
-  snapshot?: {
-    destination?: string
-    duration?: string
-    travelers?: string
-    budget?: string
-    tier?: string
-  }
-}
+import { applyChatStream, mergeChatMessages, type ChatMessage as Message } from '../lib/chat-messages'
 
 interface JobStatus {
   status: string
@@ -164,6 +147,7 @@ const CreateTrip: React.FC = () => {
       id: 'welcome',
       role: 'assistant',
       content: welcomeMessage,
+      isWelcome: true,
       timestamp: 'Just now',
       suggestions: DEFAULT_INITIAL_SUGGESTIONS,
     },
@@ -186,9 +170,11 @@ const CreateTrip: React.FC = () => {
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({})
 
   const chatEndRef = useRef<HTMLDivElement>(null)
+  const followChatRef = useRef(true)
   const inputRef = useRef<HTMLInputElement>(null)
-  const streamReplyStartedRef = useRef(false)
   const activeStreamMessageIdRef = useRef<string | null>(null)
+  const historyRequestRef = useRef(0)
+  const collectionPendingRef = useRef(false)
   const pendingWelcomeMessageRef = useRef<string | null>(null)
   const previousTripIdRef = useRef<string | undefined>(tripId)
 
@@ -214,7 +200,7 @@ const CreateTrip: React.FC = () => {
           return data.trip ?? null
         },
       })
-      setTrip(nextTrip)
+      if (previousTripIdRef.current === tripId) setTrip(nextTrip)
     } catch (err) {
       console.error('[CreateTrip] loadTrip failed', err)
     }
@@ -223,12 +209,14 @@ const CreateTrip: React.FC = () => {
   // Load chat messages from backend
   const loadMessages = useCallback(async (force = false) => {
     if (!tripId || !isAuthenticated) return
+    const request = ++historyRequestRef.current
     try {
+      if (force) await queryClient.cancelQueries({ queryKey: messagesQueryKey, exact: true })
       const nextMessages = await queryClient.fetchQuery({
         queryKey: messagesQueryKey,
         staleTime: force ? 0 : undefined,
-        queryFn: async (): Promise<Message[]> => {
-          const res = await apiFetch(`/api/trips/${tripId}/messages`, { headers: headers() })
+        queryFn: async ({ signal }): Promise<Message[]> => {
+          const res = await apiFetch(`/api/trips/${tripId}/messages`, { headers: headers(), signal })
           if (!res.ok) throw new Error(`Messages request failed (${res.status})`)
           const data = await res.json()
           return Array.isArray(data.messages)
@@ -237,6 +225,8 @@ const CreateTrip: React.FC = () => {
               role: m.role,
               content: m.content || m.text,
               timestamp: m.created_at || 'Just now',
+              clientMessageId: m.meta?.client_message_id,
+              delivery: 'saved',
               isWelcome: m.meta?.branch === 'welcome',
               showConfirmationCard: m.meta?.status === 'awaiting_confirmation',
               snapshot: m.meta?.snapshot,
@@ -245,6 +235,7 @@ const CreateTrip: React.FC = () => {
             : []
         },
       })
+      if (request !== historyRequestRef.current || previousTripIdRef.current !== tripId) return
       if (nextMessages.length > 0) {
         const visibleWelcome = pendingWelcomeMessageRef.current
         const persistedWelcome = nextMessages.find((message) => message.isWelcome)
@@ -265,12 +256,14 @@ const CreateTrip: React.FC = () => {
                 ...nextMessages,
               ]
           : nextMessages
-        setMessages(visibleMessages)
+        setMessages(current => mergeChatMessages(current, visibleMessages))
         const lastAssistantMessage = [...visibleMessages].reverse().find((message) => message.role === 'assistant')
-        setCurrentSuggestions(lastAssistantMessage?.suggestions ?? [])
+        if (!collectionPendingRef.current) setCurrentSuggestions(lastAssistantMessage?.suggestions ?? [])
       }
     } catch (err) {
-      console.error('[CreateTrip] loadMessages failed', err)
+      if (request === historyRequestRef.current && previousTripIdRef.current === tripId) {
+        console.error('[CreateTrip] loadMessages failed', err)
+      }
     }
   }, [headers, isAuthenticated, messagesQueryKey, queryClient, tripId])
 
@@ -288,7 +281,7 @@ const CreateTrip: React.FC = () => {
           return parseBackendPlan(data)
         },
       })
-      setPlan(nextPlan)
+      if (previousTripIdRef.current === tripId) setPlan(nextPlan)
     } catch (err) {
       console.debug('[CreateTrip] loadPlan: Plan not ready yet', err)
     }
@@ -326,6 +319,7 @@ const CreateTrip: React.FC = () => {
       const response = await apiFetch(`/api/trips/${tripId}/job-status`, { headers: headers() })
       if (!response.ok) return
       const result = (await response.json()) as JobStatus
+      if (previousTripIdRef.current !== tripId) return
       setJob(result.status === 'idle' || result.status === 'not_started' ? null : result)
       if (result.status === 'completed') {
         await Promise.all([loadTrip(true), loadPlan(true)])
@@ -349,6 +343,9 @@ const CreateTrip: React.FC = () => {
       // The initial state has already chosen a greeting. Only choose another
       // when the user actively leaves an existing trip for a new blank trip.
       if (returnedFromExistingTrip) {
+        collectionPendingRef.current = false
+        setBusy(false)
+        setThinkingStep(null)
         const nextWelcomeMessage = getWelcomeMessage(user)
         setWelcomeMessage(nextWelcomeMessage)
         setMessages([
@@ -356,12 +353,28 @@ const CreateTrip: React.FC = () => {
             id: 'welcome',
             role: 'assistant',
             content: nextWelcomeMessage,
+            isWelcome: true,
             timestamp: 'Just now',
             suggestions: DEFAULT_INITIAL_SUGGESTIONS,
           },
         ])
       }
       return
+    }
+    if (previousTripIdRef.current !== tripId) {
+      const initialHandoff = previousTripIdRef.current === undefined
+        && Boolean(queryClient.getQueryData(messagesQueryKey))
+      setMessages(queryClient.getQueryData<Message[]>(messagesQueryKey) ?? [])
+      setTrip(queryClient.getQueryData<BackendTrip>(tripQueryKey) ?? null)
+      setPlan(queryClient.getQueryData<NormalizedPlan>(planQueryKey) ?? null)
+      setJob(null)
+      activeStreamMessageIdRef.current = null
+      followChatRef.current = true
+      if (!initialHandoff) {
+        collectionPendingRef.current = false
+        setBusy(false)
+        setThinkingStep(null)
+      }
     }
     previousTripIdRef.current = tripId
     // Keep the current chat visible while its newly created slug is placed in
@@ -374,7 +387,7 @@ const CreateTrip: React.FC = () => {
       if (isCurrentTrip) setIsInitialTripLoading(false)
     })
     return () => { isCurrentTrip = false }
-  }, [tripId, user, loadTrip, loadMessages, loadPlan, messagesQueryKey, queryClient, refreshJobStatus])
+  }, [tripId, user, loadTrip, loadMessages, loadPlan, messagesQueryKey, tripQueryKey, planQueryKey, queryClient, refreshJobStatus])
 
   // Automatically send pending message after user completes login
   useEffect(() => {
@@ -403,7 +416,7 @@ const CreateTrip: React.FC = () => {
   useEffect(() => {
     // Token streaming can update the chat many times per second. Restarting a
     // smooth scroll for every token makes the reply visibly jump and stutter.
-    chatEndRef.current?.scrollIntoView({ behavior: 'auto' })
+    if (followChatRef.current) chatEndRef.current?.scrollIntoView({ behavior: 'auto', block: 'nearest' })
   }, [messages])
 
   useEffect(() => {
@@ -459,6 +472,7 @@ const CreateTrip: React.FC = () => {
           buffer = events.pop() ?? ''
 
           events.forEach((event) => {
+            if (previousTripIdRef.current !== tripId) return
             const name = event.match(/^event:\s*(.+)$/m)?.[1] ?? 'message'
             const raw = event.match(/^data:\s*(.+)$/m)?.[1]
             if (!raw) return
@@ -467,12 +481,15 @@ const CreateTrip: React.FC = () => {
               const payload = JSON.parse(raw)
               if (name === 'status') {
                 setThinkingStep(payload.message || null)
-                // The runtime deliberately emits idle just before a synthetic
-                // stream starts. Only treat it as terminal after reply text has
-                // actually arrived; otherwise a late SSE subscription clears
-                // the composer and reloads messages too early.
-                if (payload.status === 'idle' && streamReplyStartedRef.current) {
-                  streamReplyStartedRef.current = false
+                if (payload.status !== 'idle' && payload.status !== 'error') {
+                  collectionPendingRef.current = true
+                  setBusy(true)
+                  setCurrentSuggestions([])
+                }
+                // Reconnection may happen after the turn finished. Only an
+                // explicit terminal snapshot can complete a missed live turn.
+                if (payload.turn_complete === true && collectionPendingRef.current) {
+                  collectionPendingRef.current = false
                   activeStreamMessageIdRef.current = null
                   setBusy(false)
                   setThinkingStep(null)
@@ -485,13 +502,15 @@ const CreateTrip: React.FC = () => {
                 void refreshJobStatus()
               }
               if (name === 'error_event' && payload.message) {
-                streamReplyStartedRef.current = false
+                collectionPendingRef.current = false
                 activeStreamMessageIdRef.current = null
                 setMessages((current) => {
-                  const alreadyShown = current.some((message) => message.content === payload.message)
-                  return alreadyShown
-                    ? current
-                    : [...current, { id: `error_${Date.now()}`, role: 'assistant', content: payload.message, timestamp: 'Just now' }]
+                  const message: Message = {
+                    id: payload.message_id ? String(payload.message_id) : `error_${Date.now()}`,
+                    role: 'assistant', content: payload.message, timestamp: 'Just now',
+                    delivery: payload.message_id ? 'saved' : 'failed',
+                  }
+                  return mergeChatMessages(current, [message])
                 })
                 setThinkingStep(null)
                 setBusy(false)
@@ -500,30 +519,10 @@ const CreateTrip: React.FC = () => {
                 setCurrentSuggestions(payload.suggestions)
               }
               if (name === 'stream' && (payload.text || payload.chunk)) {
-                streamReplyStartedRef.current = true
-                const streamMessageId = activeStreamMessageIdRef.current
+                const streamMessageId = payload.message_id ? String(payload.message_id) : activeStreamMessageIdRef.current
                   ?? `streaming_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
                 activeStreamMessageIdRef.current = streamMessageId
-                setMessages((current) => {
-                  const nextMessages = [...current]
-                  const streamingIndex = nextMessages.findIndex(
-                    (message) => message.id === streamMessageId,
-                  )
-                  if (streamingIndex >= 0) {
-                    const previous = nextMessages[streamingIndex]
-                    const text = payload.text ?? `${previous.content ?? ''}${payload.chunk ?? ''}`
-                    nextMessages[streamingIndex] = { ...previous, content: text }
-                  } else {
-                    // Never build the first assistant chunk from the last
-                    // message: that last message is normally the user's text.
-                    nextMessages.push({
-                      id: streamMessageId,
-                      role: 'assistant',
-                      content: payload.text ?? payload.chunk ?? '',
-                    })
-                  }
-                  return nextMessages
-                })
+                setMessages(current => applyChatStream(current, streamMessageId, payload.chunk, payload.text))
               }
               if (name === 'checkpoint') {
                 setMessages((current) => {
@@ -538,7 +537,7 @@ const CreateTrip: React.FC = () => {
                 void loadTrip(true)
               }
               if (name === 'stream_end') {
-                streamReplyStartedRef.current = false
+                collectionPendingRef.current = false
                 activeStreamMessageIdRef.current = null
                 setThinkingStep(null)
                 setBusy(false)
@@ -587,7 +586,7 @@ const CreateTrip: React.FC = () => {
   // Send Message
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || input).trim()
-    if (!text || busy || hasPlanningStarted) return
+    if (!text || busy || collectionPendingRef.current || hasPlanningStarted) return
 
     // Unauthenticated Guard: Require user to login first before dispatching message
     if (!isAuthenticated) {
@@ -602,16 +601,20 @@ const CreateTrip: React.FC = () => {
     // request is in progress, until the server publishes relevant new ones.
     setCurrentSuggestions([])
     setBusy(true)
-    streamReplyStartedRef.current = false
+    collectionPendingRef.current = true
+    followChatRef.current = true
     activeStreamMessageIdRef.current = null
     setThinkingStep('Sending your message')
 
     // Immediately reflect the user's message in the chat
+    const clientMessageId = crypto.randomUUID()
     const userMsg: Message = {
-      id: `u_${Date.now()}`,
+      id: `u_${clientMessageId}`,
       role: 'user',
       content: text,
       timestamp: 'Just now',
+      clientMessageId,
+      delivery: 'pending',
     }
     const optimisticMessages = [...messages, userMsg]
     setMessages(optimisticMessages)
@@ -625,7 +628,7 @@ const CreateTrip: React.FC = () => {
           headers: headers(true),
           body: JSON.stringify({
             text,
-            client_message_id: crypto.randomUUID(),
+            client_message_id: clientMessageId,
             welcome_message: welcomeMessage,
           }),
         })
@@ -648,6 +651,7 @@ const CreateTrip: React.FC = () => {
             navigate(`/trips/${data.slug}`, { replace: true })
             return
           }
+          throw new Error('The server did not return a trip address.')
         } else {
           const errData = await res.json().catch(() => ({}))
           setMessages((prev) => [
@@ -659,6 +663,7 @@ const CreateTrip: React.FC = () => {
               timestamp: 'Just now',
             },
           ])
+          collectionPendingRef.current = false
           setBusy(false)
           setThinkingStep(null)
         }
@@ -673,6 +678,7 @@ const CreateTrip: React.FC = () => {
             timestamp: 'Just now',
           },
         ])
+        collectionPendingRef.current = false
         setBusy(false)
         setThinkingStep(null)
       }
@@ -682,7 +688,7 @@ const CreateTrip: React.FC = () => {
         const res = await apiFetch(`/api/trips/${tripId}/chat`, {
           method: 'POST',
           headers: headers(true),
-          body: JSON.stringify({ text, client_message_id: crypto.randomUUID() }),
+          body: JSON.stringify({ text, client_message_id: clientMessageId }),
         })
         if (!res.ok) {
           const errData = await res.json().catch(() => ({}))
@@ -695,6 +701,7 @@ const CreateTrip: React.FC = () => {
               timestamp: 'Just now',
             },
           ])
+          collectionPendingRef.current = false
           setBusy(false)
           setThinkingStep(null)
         } else {
@@ -712,6 +719,7 @@ const CreateTrip: React.FC = () => {
             timestamp: 'Just now',
           },
         ])
+        collectionPendingRef.current = false
         setBusy(false)
         setThinkingStep(null)
       }
@@ -720,32 +728,32 @@ const CreateTrip: React.FC = () => {
 
   // Trigger Phase 2 Autonomous Planning Solver
   const triggerPlanning = async () => {
-    if (!tripId) return
+    if (!tripId || busy) return
     if (!isAuthenticated) {
       openLogin()
       return
     }
 
+    if (!hasPlanningFailure) {
+      await handleSendMessage('Yes, start planning')
+      return
+    }
+
     setBusy(true)
-    setThinkingStep('Enqueuing autonomous route solver...')
+    setThinkingStep('Requesting another planning attempt')
     try {
-      const res = await apiFetch(`/api/trips/${tripId}/confirm`, {
+      const res = await apiFetch(`/api/trips/${tripId}/planning/retry`, {
         method: 'POST',
         headers: headers(true),
       })
-      if (res.ok) {
-        setJob({
-          status: 'running',
-          progress_percent: 0,
-          current_step: 'Starting trip planning',
-          completed_tasks: 0,
-          total_tasks: 10,
-        })
-        setIsCanvasOpen(true)
-        void queryClient.invalidateQueries({ queryKey: ['trips'] })
-      }
+      if (!res.ok) throw new Error(await readApiError(res))
+      await refreshJobStatus()
+      void queryClient.invalidateQueries({ queryKey: ['trips'] })
     } catch (err) {
-      console.error('[CreateTrip] Failed to confirm trip', err)
+      setMessages(current => [...current, {
+        id: `error_${Date.now()}`, role: 'assistant',
+        content: err instanceof Error ? err.message : 'Planning could not be restarted. Please try again.',
+      }])
     } finally {
       setBusy(false)
       setThinkingStep(null)
@@ -773,13 +781,14 @@ const CreateTrip: React.FC = () => {
   const isComposerLocked = hasPlanningStarted
   const planningFailureMessage = typeof job?.failure_details?.message === 'string'
     ? job.failure_details.message
-    : 'We could not finish this itinerary. You can retry planning or adjust the trip details in chat.'
+    : 'We could not finish this itinerary. You can retry planning.'
 
   useEffect(() => {
     if (isPlanning || isDone) setIsCanvasOpen(true)
   }, [isDone, isPlanning])
 
   const destinationName = trip?.name ? trip.name.replace(/^Trip to /i, '') : 'Your Trip'
+  const latestAssistantMessageId = [...messages].reverse().find(message => message.role === 'assistant')?.id
   const durationLabel = trip?.duration_days ? `${trip.duration_days} Days` : 'Dates TBD'
   const travelerCount = (trip?.travelers?.adults ?? 0) + (trip?.travelers?.children ?? 0) + (trip?.travelers?.seniors ?? 0)
   const travelerLabel = travelerCount > 0 ? `${travelerCount} ${travelerCount === 1 ? 'Traveler' : 'Travelers'}` : 'Travelers TBD'
@@ -899,10 +908,13 @@ const CreateTrip: React.FC = () => {
         <div
           className={`${
             isCanvasOpen ? 'lg:col-span-5' : 'lg:col-span-12 w-full'
-          } bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden transition-all duration-300 print:hidden`}
+          } min-w-0 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col h-full overflow-hidden transition-all duration-300 print:hidden`}
         >
           {/* Messages Stream */}
-          <div className="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4">
+          <div className="flex-1 min-w-0 p-4 sm:p-6 overflow-y-auto space-y-4" onScroll={event => {
+            const element = event.currentTarget
+            followChatRef.current = element.scrollHeight - element.scrollTop - element.clientHeight < 80
+          }}>
             {messages.map((m) => (
               <div key={m.id} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {m.role === 'assistant' && (
@@ -911,7 +923,7 @@ const CreateTrip: React.FC = () => {
                   </div>
                 )}
                 <div
-                  className={`max-w-[88%] rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed ${
+                  className={`min-w-0 max-w-[88%] break-words rounded-2xl px-4 py-3 text-xs sm:text-sm leading-relaxed ${
                     m.role === 'user'
                       ? 'bg-slate-900 text-white rounded-tr-xs shadow-md'
                       : 'bg-slate-100/80 text-slate-800 rounded-tl-xs border border-slate-200/60'
@@ -920,7 +932,9 @@ const CreateTrip: React.FC = () => {
                   <p className="whitespace-pre-wrap">{m.content || m.text}</p>
 
                   {/* Confirmation Gate Card */}
-                  {m.showConfirmationCard && !isDone && !isPlanning && (
+                  {m.showConfirmationCard && trip?.status === 'awaiting_confirmation'
+                    && m.id === latestAssistantMessageId
+                    && !isDone && !isPlanning && (
                     <div className="mt-3.5 bg-white rounded-2xl p-4 border border-indigo-100 shadow-sm text-slate-900 text-left">
                       <div className="flex items-center justify-between pb-2 mb-3 border-b border-slate-100">
                         <span className="text-[11px] font-black uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
@@ -950,10 +964,11 @@ const CreateTrip: React.FC = () => {
 
                       <button
                         onClick={triggerPlanning}
+                        disabled={busy}
                         className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-600/25 transition flex items-center justify-center gap-2 cursor-pointer"
                       >
                         <Zap className="w-4 h-4 text-amber-400" />
-                        <span>Launch Autonomous Planner 🚀</span>
+                        <span>Start planning</span>
                       </button>
                     </div>
                   )}
@@ -962,7 +977,7 @@ const CreateTrip: React.FC = () => {
             ))}
 
             {busy && thinkingStep && (
-              <div className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50/80 border border-indigo-100 px-3.5 py-2 rounded-xl max-w-sm animate-pulse ml-10 shadow-2xs">
+              <div role="status" aria-live="polite" className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50/80 border border-indigo-100 px-3.5 py-2 rounded-xl max-w-sm animate-pulse ml-10 shadow-2xs">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
                 <span>
                   {thinkingStep.replace(/[.…]+$/, '')}
@@ -1014,6 +1029,7 @@ const CreateTrip: React.FC = () => {
                 <input
                   ref={inputRef}
                   type="text"
+                  aria-label="Trip requirements message"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder={
@@ -1024,10 +1040,11 @@ const CreateTrip: React.FC = () => {
                       : 'Describe what you want for this trip...'
                   }
                   disabled={isComposerLocked}
-                  className="flex-1 rounded-xl border border-slate-300 px-4 py-2.5 text-xs sm:text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:bg-slate-50"
+                  className="flex-1 min-w-0 rounded-xl border border-slate-300 px-4 py-2.5 text-xs sm:text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:bg-slate-50"
                 />
                 <button
                   type="submit"
+                  aria-label="Send message"
                   disabled={!input.trim() || busy || isComposerLocked}
                   className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center justify-center cursor-pointer"
                   title={!isAuthenticated ? 'Sign in with Google to send message' : 'Send message'}

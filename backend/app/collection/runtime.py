@@ -7,6 +7,7 @@ from time import perf_counter
 import os
 import json
 import logging
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from collections.abc import Awaitable, Callable
@@ -81,11 +82,14 @@ class TripEventPublisher:
 
         await self._publish("checkpoint", payload)
 
-    async def publish_error(self, message: str) -> None:
+    async def publish_error(self, message: str, message_id: int | None = None) -> None:
         """Publish an error event for the current trip."""
 
         payload = ErrorPayload(message=message)
-        await self._publish("error_event", payload.model_dump())
+        data = payload.model_dump()
+        if message_id is not None:
+            data["message_id"] = str(message_id)
+        await self._publish("error_event", data)
 
     # Implements publish_trace on TripEventPublisher so orchestration code can emit structured debug events to both the SSE stream and the server log.
     async def publish_trace(
@@ -113,11 +117,14 @@ class TripEventPublisher:
         trace_logger.debug("collection_trace", extra={"stage": stage, "block": block})
         await self._publish("trace", payload.model_dump())
 
-    async def stream_text(self, text: str) -> None:
+    async def stream_text(self, text: str, message_id: int | None = None) -> None:
         """Stream assistant text in small chunks for a live typing effect."""
 
         for chunk in self._chunk_text(text):
-            await self._publish("stream", {"chunk": chunk})
+            payload = {"chunk": chunk}
+            if message_id is not None:
+                payload["message_id"] = str(message_id)
+            await self._publish("stream", payload)
             await asyncio.sleep(STREAM_DELAY_SECONDS)
         await self.publish_stream_end()
 
@@ -152,7 +159,7 @@ class TripEventPublisher:
 
         if not text.strip():
             return [""]
-        return [word + " " for word in text.split()]
+        return re.findall(r"\S+\s*|\s+", text)
 
 
 # Normalizes any trace value into a small JSON-safe payload, truncating large objects so they fit in the browser debug panel.
@@ -361,7 +368,7 @@ class CollectionRuntimeService:
             # The assistant retry text is already persisted to storage by the
             # orchestrator, so the frontend should show it once via error_event
             # instead of also streaming a duplicate assistant message.
-            await publisher.publish_error(outcome.error_message)
+            await publisher.publish_error(outcome.error_message, message_id=outcome.response_message_id)
             await publisher.publish_status(LiveStatusPhase.IDLE.value, "")
             return
 
@@ -371,7 +378,7 @@ class CollectionRuntimeService:
             # A synthetic stream begins only after the response is complete.
             # Hide the temporary processing label before showing any reply text.
             await publisher.publish_status(LiveStatusPhase.IDLE.value, "")
-            await publisher.stream_text(outcome.response_text)
+            await publisher.stream_text(outcome.response_text, message_id=outcome.response_message_id)
         await publisher.publish_suggestions(outcome.suggestions)
         await publisher.publish_status(LiveStatusPhase.IDLE.value, "")
 
@@ -395,13 +402,13 @@ class CollectionRuntimeService:
         message = "Sorry, I didn't catch that cleanly. Could you say it once more in a simple way?"
         # Persist failures as assistant messages. SSE connections may begin after
         # a fast failure, and the messages endpoint remains the reliable replay.
-        self.repository.insert_message(
+        message_id = self.repository.insert_message(
             trip_id,
             "assistant",
             message,
             meta={"branch": "error", "error_type": type(exc).__name__},
         )
-        await publisher.publish_error(message)
+        await publisher.publish_error(message, message_id=message_id)
         await publisher.publish_status(
             LiveStatusPhase.ERROR.value,
             "I need one more try to understand that properly.",

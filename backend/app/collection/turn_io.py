@@ -51,6 +51,7 @@ class TurnOutcome:
     defaults_applied: list[str] = field(default_factory=list)
     error_message: str | None = None
     response_streamed: bool = False
+    response_message_id: int | None = None
     suggestions: list[str] = field(default_factory=list)
 
 
@@ -146,7 +147,7 @@ async def finalize_turn(
     elif previous_status != TripStatus.AWAITING_CONFIRMATION:
         repository.clear_pending_checkpoints(trip.id)
 
-    repository.insert_message(
+    outcome.response_message_id = repository.insert_message(
         trip.id,
         "assistant",
         outcome.response_text,
@@ -156,6 +157,7 @@ async def finalize_turn(
             "sanity": outcome.sanity_conflicts,
             "conflicts": outcome.rule_conflicts,
             "branch": outcome.branch,
+            "status": outcome.status.value,
             "defaults_applied": outcome.defaults_applied,
             "suggestions": outcome.suggestions,
         },
