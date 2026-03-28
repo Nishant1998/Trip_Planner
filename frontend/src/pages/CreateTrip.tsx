@@ -33,6 +33,7 @@ import { useAuth } from '../context/AuthContext'
 import { apiFetch } from '../lib/api'
 import { getWelcomeMessage } from '../lib/welcome'
 import { parseBackendPlan, placeholderCover, type NormalizedPlan } from '../lib/plan'
+import { getPlanningState } from '../lib/planning-status'
 
 interface Message {
   id: string | number
@@ -325,7 +326,7 @@ const CreateTrip: React.FC = () => {
       const response = await apiFetch(`/api/trips/${tripId}/job-status`, { headers: headers() })
       if (!response.ok) return
       const result = (await response.json()) as JobStatus
-      setJob(result.status === 'idle' ? null : result)
+      setJob(result.status === 'idle' || result.status === 'not_started' ? null : result)
       if (result.status === 'completed') {
         await Promise.all([loadTrip(true), loadPlan(true)])
       }
@@ -586,7 +587,7 @@ const CreateTrip: React.FC = () => {
   // Send Message
   const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || input).trim()
-    if (!text || busy) return
+    if (!text || busy || hasPlanningStarted) return
 
     // Unauthenticated Guard: Require user to login first before dispatching message
     if (!isAuthenticated) {
@@ -765,12 +766,11 @@ const CreateTrip: React.FC = () => {
     setCheckedItems((prev) => ({ ...prev, [index]: !prev[index] }))
   }
 
-  const isDone = job?.status === 'completed' || (!job && (trip?.status === 'completed' || Boolean(plan)))
-  const isPlanning = !isDone && (job?.status === 'running' || job?.status === 'queued')
+  const { isDone, isPlanning, hasPlanningFailure, hasPlanningStarted } = getPlanningState(
+    trip?.status, job?.status, Boolean(plan),
+  )
   const showPlanningCanvas = isPlanning
-  const hasPlanningFailure = !isDone && job?.status === 'failed'
-  const hasPlanningStarted = isPlanning || isDone || hasPlanningFailure || Boolean(job)
-  const isComposerLocked = busy || hasPlanningStarted
+  const isComposerLocked = hasPlanningStarted
   const planningFailureMessage = typeof job?.failure_details?.message === 'string'
     ? job.failure_details.message
     : 'We could not finish this itinerary. You can retry planning or adjust the trip details in chat.'
@@ -984,7 +984,7 @@ const CreateTrip: React.FC = () => {
                   <button
                     key={idx}
                     onClick={() => handleSuggestionClick(sug)}
-                    disabled={isComposerLocked}
+                    disabled={busy || isComposerLocked}
                     className="text-left text-xs bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 transition shadow-2xs cursor-pointer font-medium disabled:opacity-50"
                   >
                     {sug}
@@ -1028,7 +1028,7 @@ const CreateTrip: React.FC = () => {
                 />
                 <button
                   type="submit"
-                  disabled={!input.trim() || isComposerLocked}
+                  disabled={!input.trim() || busy || isComposerLocked}
                   className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center justify-center cursor-pointer"
                   title={!isAuthenticated ? 'Sign in with Google to send message' : 'Send message'}
                 >
