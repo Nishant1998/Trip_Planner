@@ -6,10 +6,22 @@ import re
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from app.models.enums import TripScope
+from app.models.enums import DestType, TripScope
 from app.models.memory import TripMemory
 
 _CURRENCY_CODE = re.compile(r"^[A-Z]{3}$")
+
+
+def is_local_city_trip(memory: TripMemory) -> bool:
+    """Recognize sightseeing within the same explicitly named city."""
+
+    destination = memory.needed.destination
+    origin = memory.needed.origin
+    return bool(
+        origin and destination and destination.type in (DestType.CITY, DestType.CITIES)
+        and len(destination.items) == 1
+        and origin.strip().casefold() == destination.items[0].strip().casefold()
+    )
 
 
 def normalize_currency_code(value: object) -> str | None:

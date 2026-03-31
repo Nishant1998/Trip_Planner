@@ -31,7 +31,7 @@ class TavilyTravelAdviceLookup:
     def __init__(self, tavily_api_key: str | None) -> None:
         self._api_key = tavily_api_key
         self._client = httpx.AsyncClient(timeout=15.0, trust_env=False)
-        self._cache: dict[tuple[str, str], tuple[datetime, list[str]]] = {}
+        self._cache: dict[tuple[str, ...], tuple[datetime, list[str]]] = {}
 
     async def lookup(self, memory: TripMemory, question: str) -> list[str]:
         if not self._api_key or not _needs_current_facts(question):
@@ -45,7 +45,13 @@ class TavilyTravelAdviceLookup:
             else "upcoming travel"
         )
         destination_text = ", ".join(destination.items)
-        cache_key = (destination_text.casefold(), month.casefold())
+        cache_key = (
+            destination_text.casefold(),
+            (memory.needed.origin or "").casefold(),
+            str(memory.needed.start_date),
+            str(memory.needed.end_date),
+            " ".join(question.casefold().split()),
+        )
         cached = self._cache.get(cache_key)
         now = datetime.now(timezone.utc)
         if cached and now - cached[0] < _CACHE_TTL:
@@ -62,18 +68,29 @@ class TavilyTravelAdviceLookup:
                 json={"query": query, "search_depth": "basic", "max_results": 4},
             )
             response.raise_for_status()
-            results = response.json().get("results", [])
+            payload = response.json()
+            results = payload.get("results", []) if isinstance(payload, dict) else []
         except (httpx.HTTPError, ValueError) as exc:
             logger.info(
                 "Advice lookup unavailable; using saved destination context: %s", exc
             )
             return []
 
-        context = [
-            f"{item.get('title', 'Travel information')}: {item.get('content', '').strip()}"
-            for item in results
-            if item.get("content")
-        ]
+        context = []
+        for item in results[:4] if isinstance(results, list) else []:
+            if not isinstance(item, dict) or not isinstance(item.get("content"), str):
+                continue
+            context.append(
+                f"{item.get('title', 'Travel information')}: {item['content'].strip()}\n"
+                f"Source: {item.get('url', 'not provided')}; retrieved {now.date().isoformat()}"
+            )
+        self._cache = {
+            key: value
+            for key, value in self._cache.items()
+            if now - value[0] < _CACHE_TTL
+        }
+        if len(self._cache) >= 128:
+            self._cache.pop(next(iter(self._cache)))
         self._cache[cache_key] = (now, context)
         return context
 

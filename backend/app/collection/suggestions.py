@@ -23,9 +23,14 @@ def suggestions_for_turn(memory: TripMemory, outcome: "TurnOutcome") -> list[str
     if outcome.status is TripStatus.AWAITING_CONFIRMATION:
         return ["Yes, start planning", "I want to change something"]
 
-    question = outcome.response_text.casefold()
+    # Only inspect the actual question, not an acknowledgement containing
+    # previously collected facts such as the budget or transport choice.
+    text = outcome.response_text.casefold().strip()
+    if not text.endswith("?"):
+        return []
+    question = text.rsplit("?", 1)[0].rsplit(". ", 1)[-1]
     if "how would you like to travel" in question or "travel by" in question:
-        return ["By flight", "By train", "I am flexible"]
+        return []
     if "travel style" in question or "pace" in question:
         return ["Relaxed and unhurried", "Balanced sightseeing and downtime"]
     if "dietary" in question or "food preference" in question:
@@ -33,7 +38,7 @@ def suggestions_for_turn(memory: TripMemory, outcome: "TurnOutcome") -> list[str
     if "how many adults" in question or "how many people" in question:
         return ["It will be a solo trip", "There will be two adults"]
     if "budget" in question:
-        return ["My budget is ₹50,000", "Help me choose a realistic budget"]
+        return ["Help me choose a realistic budget"]
     if "date" in question or "when would you like" in question:
         return ["I am flexible with dates", "Help me choose suitable dates"]
 

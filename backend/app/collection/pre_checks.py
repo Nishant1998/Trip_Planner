@@ -1,25 +1,7 @@
-# Implements budget, booking-window, and cached destination-access checks.
-"""Pre-summary gate checks run once before the confirmation summary is generated.
+"""Budget estimates, booking warnings and researched access checks before approval.
 
-Three checks run just before Riya generates the trip summary:
-
-  1. Budget feasibility  — dynamic internet-assisted estimate; blocks summary
-                           until user confirms or revises budget.
-  2. Booking window      — warns when trip starts within 3 days (incl. today);
-                           informational only, never blocks.
-  3. Accessibility       — verified hard closures / mandatory restrictions only;
-                           blocks summary until user confirms or adjusts dates.
-
-Checks 1 and 3 are async (internet lookups) and run in parallel.
-Check 2 is instant.
-
-Re-run behaviour
-----------------
-Once a user accepts a blocking check ("proceed anyway"), the check is skipped
-unless the fields it depends on change:
-  - Budget check  : re-runs if trip_budget / num_adults / num_children /
-                    num_seniors / trip_duration_days change.
-  - Accessibility : re-runs if destination or start_date / end_date change.
+Budget estimates are not live quotes and can be acknowledged by the traveller.
+Known closures require a change to the trip, not just permission to proceed.
 """
 
 from __future__ import annotations
@@ -37,8 +19,6 @@ from app.exceptions import AgentRunError
 from app.models.memory import PreSummaryGate, TripMemory
 
 logger = logging.getLogger(__name__)
-
-_MIN_INTERNATIONAL_BUDGET_PER_TRAVELLER_INR = 40_000
 
 
 # ── Data shapes ──────────────────────────────────────────────────────────────
@@ -74,7 +54,9 @@ class PreSummaryCheckResult:
             parts.extend(i.message for i in notes)
 
         combined = "\n\n".join(parts)
-        if blocking and proceed_hint:
+        if any(i.check_name == "accessibility" for i in blocking):
+            combined += "\n\nPlease change the affected destination or dates before we continue."
+        elif blocking and proceed_hint:
             combined += "\n\nWant to make adjustments, or should I go ahead and plan within what you have?"
         return combined
 
@@ -92,6 +74,11 @@ def _budget_snapshot(memory: TripMemory) -> str:
         "num_seniors": memory.optional.num_seniors,
         "trip_duration_days": memory.needed.trip_duration_days,
         "origin": memory.needed.origin,
+        "currency": memory.metadata.currency_code,
+        "start_date": str(memory.needed.start_date),
+        "end_date": str(memory.needed.end_date),
+        "preferences": memory.optional.model_dump(mode="json"),
+        "trip_notes": memory.internal.trip_context_notes,
         "destination": (
             memory.needed.destination.items if memory.needed.destination else []
         ),
@@ -106,36 +93,6 @@ def _total_travellers(memory: TripMemory) -> int:
         (memory.needed.num_adults or 0)
         + (memory.optional.num_children or 0)
         + (memory.optional.num_seniors or 0)
-    )
-
-
-def check_obvious_budget_feasibility(memory: TripMemory) -> PreSummaryIssue | None:
-    """Catch only unmistakably impossible INR international budgets early.
-
-    This is a conservative safety floor, not a price quote or a replacement for
-    the evidence-backed estimate at confirmation.
-    """
-
-    budget = memory.needed.trip_budget
-    people = _total_travellers(memory)
-    if (
-        budget is None
-        or people <= 0
-        or memory.metadata.currency_code != "INR"
-        or str(memory.metadata.trip_scope or "").casefold() != "international"
-    ):
-        return None
-    minimum = people * _MIN_INTERNATIONAL_BUDGET_PER_TRAVELLER_INR
-    if budget >= minimum:
-        return None
-    return PreSummaryIssue(
-        check_name="budget",
-        message=(
-            f"A total budget of ₹{budget:,} is not enough for an international trip "
-            f"for {people} traveller(s), even before day-to-day spending. Please raise "
-            f"the budget or choose a closer trip before we continue."
-        ),
-        blocks_summary=True,
     )
 
 
@@ -159,30 +116,10 @@ def check_selected_transport_feasibility(memory: TripMemory) -> PreSummaryIssue 
 
 
 def run_early_trip_sanity_checks(memory: TripMemory) -> list[PreSummaryIssue]:
-    """Return immediate, non-negotiable route/budget conflicts once known."""
+    """Return researched route conflicts, not speculative budget floors."""
 
-    return [
-        issue
-        for issue in (
-            check_selected_transport_feasibility(memory),
-            check_obvious_budget_feasibility(memory),
-        )
-        if issue is not None
-    ]
-
-
-def _accessibility_snapshot(memory: TripMemory) -> str:
-    """Return an MD5 of the fields that affect destination accessibility."""
-
-    dest = memory.needed.destination
-    fields = {
-        "destination": dest.items if dest else [],
-        "start_date": str(memory.needed.start_date),
-        "end_date": str(memory.needed.end_date),
-    }
-    return hashlib.md5(
-        json.dumps(fields, default=str, sort_keys=True).encode()
-    ).hexdigest()
+    issue = check_selected_transport_feasibility(memory)
+    return [issue] if issue is not None else []
 
 
 # ── Individual checks ─────────────────────────────────────────────────────────
@@ -223,7 +160,7 @@ async def check_budget_feasibility(
 ) -> PreSummaryIssue | None:
     """Check if trip_budget is plausible for the group, route, and duration.
 
-    Uses the feasibility agent (internet-aware) to estimate a realistic cost
+    Uses a model estimate, not a live price lookup, to estimate a broad cost
     range and compares it against the stated budget.  Skipped when the user
     has already accepted and the relevant fields have not changed.
     """
@@ -253,13 +190,6 @@ async def check_budget_feasibility(
 
     total_people = _total_travellers(memory)
 
-    # A conservative floor catches obviously impossible INR budgets even when
-    # the optional feasibility model is unavailable or returns too little
-    # evidence. It is never presented as a quote or an exact price.
-    obvious_issue = check_obvious_budget_feasibility(memory)
-    if obvious_issue is not None:
-        return obvious_issue
-
     try:
         estimate = await feasibility_agent.run(
             build_feasibility_task_prompt(
@@ -268,6 +198,13 @@ async def check_budget_feasibility(
                 num_adults=memory.needed.num_adults or 1,
                 trip_duration_days=duration,
                 trip_budget=budget,
+                origin=origin,
+                start_date=str(memory.needed.start_date),
+                end_date=str(memory.needed.end_date),
+                trip_notes=[
+                    *memory.internal.trip_context_notes,
+                    *(memory.optional.trip_notes or []),
+                ],
                 num_children=memory.optional.num_children or 0,
                 num_seniors=memory.optional.num_seniors or 0,
                 travel_style=(
@@ -303,8 +240,9 @@ async def check_budget_feasibility(
         message = (
             f"A trip like this — {total_people} {person_label}, "
             f"{origin} to {dest_str}, {duration} days — "
-            f"typically costs around ₹{estimate.min_budget_inr:,} to ₹{estimate.max_budget_inr:,}. "
-            f"Your budget is ₹{budget:,}, which is about ₹{shortfall:,} below the realistic minimum."
+            f"has a rough, unverified estimate of ₹{estimate.min_budget_inr:,} to ₹{estimate.max_budget_inr:,}. "
+            f"Your budget is ₹{budget:,}, about ₹{shortfall:,} below that estimate. "
+            "Actual costs depend on what is already paid for and current prices."
         )
         if estimate.reasoning:
             message += f" ({estimate.reasoning})"
@@ -327,23 +265,12 @@ async def check_destination_accessibility(
 
     Only blocks when the agent returns a high-confidence confirmed closure.
     Uncertain results, weather concerns, and availability issues are ignored.
-    Skipped when the user has already accepted and destination/dates unchanged.
     """
-
-    gate: PreSummaryGate = memory.internal.sanity_state.pre_summary_gate
 
     destination = memory.needed.destination
     start = memory.needed.start_date
 
     if not destination or not destination.items or not start:
-        return None
-
-    # Skip when accepted and no relevant field has changed.
-    current_snapshot = _accessibility_snapshot(memory)
-    if (
-        gate.accessibility_check_accepted
-        and gate.accessibility_fields_snapshot == current_snapshot
-    ):
         return None
 
     research = memory.internal.sanity_state.destination_intelligence or {}
@@ -368,8 +295,7 @@ async def run_pre_summary_checks(
 ) -> PreSummaryCheckResult:
     """Run all three pre-summary checks and return a combined result.
 
-    Checks 1 and 3 run in parallel (both are async internet lookups).
-    Check 2 is instant and always included.
+    Budget estimation and destination research run in parallel.
     """
 
     # Run the distinct budget estimate while ensuring the one shared destination
@@ -407,7 +333,7 @@ async def run_pre_summary_checks(
 def accept_pre_summary_checks(
     memory: TripMemory, result: PreSummaryCheckResult
 ) -> None:
-    """Mark all blocking checks in *result* as accepted and store field snapshots.
+    """Acknowledge a budget estimate, never a known closure.
 
     Call this when the user says "proceed" without making any field changes.
     """
@@ -418,8 +344,5 @@ def accept_pre_summary_checks(
         if issue.check_name == "budget" and issue.blocks_summary:
             gate.budget_check_accepted = True
             gate.budget_fields_snapshot = _budget_snapshot(memory)
-        elif issue.check_name == "accessibility" and issue.blocks_summary:
-            gate.accessibility_check_accepted = True
-            gate.accessibility_fields_snapshot = _accessibility_snapshot(memory)
 
     gate.gate_awaiting_response = False

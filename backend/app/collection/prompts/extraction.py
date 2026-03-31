@@ -73,8 +73,17 @@ NORMALIZATION
 - Enum arrays: output an array containing only allowed options. Other list
   fields are arrays of concise strings. Empty answers such as no dietary
   restrictions or nothing specific to see become [] for the field being asked.
-- Times: output 24-hour HH:MM strings.
+- Times: output 24-hour HH:MM strings. day_start_time and day_end_time are
+  recurring sightseeing hours, not outbound departure or return-home deadlines.
+  Preserve an exact journey time as a [HARD] trip_context_note with its date,
+  location and direction. For example, "leave Kharghar at 8 am on Nov 14 and
+  be home by 8 pm on Nov 15" must keep both deadlines in notes; do not set
+  daily hours from this. return_time_window means departure on the return leg,
+  not arrival home. Do not replace an exact deadline with a broad time window.
 - Money: trip_budget is one integer representing the total trip budget.
+  Preserve a negative sign even when it appears before a currency symbol:
+  "-₹1" and "₹-1" both mean -1. Do not make an invalid amount positive;
+  validation belongs to the application.
   Normalize common magnitude notation (for example 50k=50000,
   1.5 lakh=150000) and currency symbols/names. Set currency_mentioned to the
   stated ISO currency code when identifiable, otherwise null. Approximate,
@@ -87,6 +96,11 @@ NORMALIZATION
   as flights, stays, meals, or visas, preserve that scope as a concise
   trip_context_note. It is important planning context, not a reason to ask a
   separate question.
+- Keep the total amount only in trip_budget. Budget-scope notes should say
+  what is included or excluded, without copying the total amount. Example:
+  "[HARD] The total budget includes one hotel night, meals, fuel, tolls and
+  parking." Preserve independent quotes, per-person amounts and specific
+  spending limits when those are separate facts.
 - Never turn a stated budget into a hotel or spending preference. Extract a
   hotel comfort level only when the user explicitly says words such as luxury,
   premium, mid-range, budget hotel, or an equivalent clear preference.
@@ -141,6 +155,8 @@ PLACES VS EXPERIENCES
   beaches, local food, cafes, heritage sites, sunset spots, spice-farm visits,
   markets, museums, nightlife, and shopping. They should guide the itinerary
   without requiring a provider record with that exact generic wording.
+- Preserve qualifiers such as quiet beaches, short walks and relaxed visits;
+  do not reduce them to beaches, walks or visits.
 - Do not duplicate a broad experience in both fields. If the traveller names
   both an exact place and a broad experience, preserve the place in must_see
   and the experience in activity_interests.
@@ -203,6 +219,16 @@ def _compact_current_values(
         }
         if field.get("options"):
             field_context["options"] = field["options"]
+        if field_name in {
+            "day_start_time",
+            "day_end_time",
+            "depart_time_window",
+            "arrival_time_window",
+            "return_time_window",
+            "cuisine_prefs",
+            "dietary_restrictions",
+        } and field.get("desc"):
+            field_context["desc"] = field["desc"]
         compact[field_name] = field_context
     return compact
 

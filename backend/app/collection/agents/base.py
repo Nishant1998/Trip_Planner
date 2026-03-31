@@ -120,9 +120,7 @@ class PydanticAgentRunner(Generic[T]):
         Uses ``agent.run_stream()`` with ``stream_output()`` (pydantic-ai's
         built-in partial-validation stream) so the LLM delivers tokens to the
         caller as they are generated rather than buffering the full response.
-        ``on_text`` is called with the full growing text on each update; the
-        orchestrator's ``_publish_stream_text`` helper computes the delta and
-        forwards only the new characters to the SSE stream.
+        ``on_text`` receives the full growing text, not a delta.
         """
 
         started_at = perf_counter()

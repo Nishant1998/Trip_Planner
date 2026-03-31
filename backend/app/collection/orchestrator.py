@@ -37,7 +37,7 @@ from app.collection.readiness import (
     assess_collection_readiness,
     get_missing_required_fields,
 )
-from app.collection.geography import normalize_currency_code
+from app.collection.geography import is_local_city_trip, normalize_currency_code
 from app.collection.acceptance import (
     clear_resolved_mapping_ambiguity,
     remember_mapping_ambiguity,
@@ -48,9 +48,9 @@ from app.collection.confirmation_gate import (
     has_current_confirmation_summary,
     invalidate_confirmation_summary,
     mark_confirmation_summary_shown,
+    normalize_budget_scope_notes,
 )
 
-# Imports all new orchestrator modules: dependency invalidation, destination intelligence, pre-summary gate, trip title, advisories, sanitizer, and invariant checks.
 from app.collection.dependencies import invalidate_dependents
 from app.collection.advisories import collect_advisories
 from app.collection.post_confirm.service import PostConfirmationService
@@ -84,7 +84,6 @@ from app.db.repository import TripRepository
 from app.services.llm_usage import capture_llm_usage
 from app.services.agent_timing import capture_agent_timing
 
-# Imports the shared response sanitizer alias and the new invariant checks module into the orchestrator.
 from app.collection.utils.sanitizer import (
     sanitize_user_facing_response as _sanitize_user_facing_response,
 )
@@ -98,7 +97,6 @@ from app.collection.validation.places import (
 )
 from app.collection.validation.invariants import run_invariant_checks
 
-# destination_intelligence helper lives in collection phase
 from app.collection.intelligence import maybe_build_destination_intelligence
 from app.collection.travel_advice import TavilyTravelAdviceLookup, TravelAdviceLookup
 
@@ -123,7 +121,6 @@ TERMINAL_STATUS_MESSAGES = {
         "Something went wrong earlier. We can try again from the latest details."
     ),
 }
-# Changes the opening message to invite a free-form description rather than prompting for one rigid required field at a time.
 DEFAULT_OPENING_MESSAGE = (
     "Hey! I'm Riya, your trip planning assistant. "
     "Tell me about the trip you have in mind - where, when, who's coming, "
@@ -140,7 +137,6 @@ _SOURCE_PRIORITY: dict[FieldSource, int] = {
     FieldSource.PROFILE: 2,
     FieldSource.USER: 3,
 }
-_SANITIZER_EMPTY_FALLBACK = _sanitize_user_facing_response("")
 _ADVICE_REQUEST_PATTERN = re.compile(
     r"\b(?:recommend|suggest(?:ion)?s?|advice|ideas?|options?|help\s+(?:me\s+)?choose|what\s+(?:route|place|destination)\s+(?:should|would))\b",
     re.IGNORECASE,
@@ -175,6 +171,8 @@ _MERGED_LIST_FIELDS = {
 _EXPLICIT_CONFIRMATION_REPLIES = {
     "yes",
     "yes please",
+    "proceed",
+    "proceed anyway",
     "yep",
     "yeah",
     "confirm",
@@ -202,18 +200,6 @@ _EXTRACTED_FIELD_ALIASES = {
     "arrival_date": "end_date",
     "return_date": "end_date",
 }
-
-# _sanitize_user_facing_response is now imported from app.collection.utils.sanitizer
-# (aliased above) so the orchestrator call sites below continue to work unchanged.
-
-
-def _sanitize_streaming_response(text: str) -> str:
-    """Apply the response guard without flashing fallback text for partial JSON."""
-
-    safe_text = _sanitize_user_facing_response(text)
-    if text.strip() and safe_text == _SANITIZER_EMPTY_FALLBACK:
-        return ""
-    return safe_text
 
 
 def _merge_list_field_values(
@@ -673,7 +659,7 @@ class TripOrchestrator:
         # Catch clear route and budget impossibilities as soon as the relevant
         # facts are known.  Optional preferences must never delay this warning.
         early_issues = run_early_trip_sanity_checks(memory)
-        if early_issues:
+        if early_issues and not advice_requested and not failure_payload:
             outcome = TurnOutcome(
                 response_text="\n\n".join(issue.message for issue in early_issues),
                 status=memory.metadata.status,
@@ -689,12 +675,17 @@ class TripOrchestrator:
                 outcome=outcome,
             )
 
-        # ── Pre-summary gate ──────────────────────────────────────────────────
-        # When all fields are filled and we would generate the summary next,
-        # run budget-feasibility and accessibility checks before committing.
-        # The gate only fires when suppress_confirmation_transition is False
-        # (i.e. not during a post-edit turn) to avoid re-triggering mid-change.
-        if not suppress_confirmation_transition:
+        # Answer questions and resolve rejected edits before offering approval.
+        edit_applied = bool(
+            changed_fields or (extraction and extraction.trip_context_notes)
+        )
+        needs_reply = bool(
+            failure_payload
+            or memory.internal.pending_clarification.active
+            or advice_requested
+            or (suppress_confirmation_transition and not edit_applied)
+        )
+        if not needs_reply:
             gate_outcome = await self._run_pre_summary_gate(
                 trip=trip,
                 memory=memory,
@@ -703,16 +694,16 @@ class TripOrchestrator:
                 extraction=extraction,
                 changed_fields=changed_fields,
                 publisher=publisher,
+                user_message=user_message,
             )
             if gate_outcome is not None:
                 return gate_outcome
-        # ─────────────────────────────────────────────────────────────────────
 
         # Reaching the summary is a deterministic state, not a model decision.
         # This guarantees every ordinary user sees the same readable review
         # before they can confirm, without an extra "are you ready" message.
         phase, _, _ = self._determine_next_action(memory)
-        if phase == "summary":
+        if phase == "summary" and not needs_reply:
             defaults_applied = apply_silent_defaults(memory)
             memory.internal.enrichment_state.enrichment_complete = True
             memory.metadata.status = transition(
@@ -750,11 +741,6 @@ class TripOrchestrator:
             LiveStatusPhase.PREPARING_REPLY,
             "Preparing your response",
         )
-        stream_state: dict[str, Any] = {
-            "response_streamed": False,
-            "last_response_text": "",
-            "emitted_response_text": "",
-        }
         result = await self._run_conversation_agent(
             memory=memory,
             extraction=extraction,
@@ -762,8 +748,6 @@ class TripOrchestrator:
             failure_payload=failure_payload,
             user_message=user_message,
             turn_context=turn_context,
-            publisher=publisher,
-            stream_state=stream_state,
             advice_requested=advice_requested,
         )
         await self._publish_trace(
@@ -784,13 +768,6 @@ class TripOrchestrator:
                 trip.id,
             )
             result.response_text = "Got it — noted. What else would you like to add?"
-            if publisher is not None and stream_state["response_streamed"]:
-                await self._publish_stream_text(
-                    publisher,
-                    result.response_text,
-                    stream_state,
-                    final=True,
-                )
 
         if result.field_asked:
             if result.field_asked not in memory.internal.enrichment_state.fields_asked:
@@ -805,17 +782,12 @@ class TripOrchestrator:
             result.ready_for_confirmation
             and readiness.is_ready
             and not suppress_confirmation_transition
+            and not needs_reply
         )
         if result.ready_for_confirmation and not readiness.is_ready:
             # Readiness is intentionally deterministic: the conversation model
             # may suggest a summary, but it cannot override essential facts.
             result.response_text = readiness.user_message()
-            if publisher is not None and stream_state["response_streamed"]:
-                await self._publish_stream_text(
-                    publisher,
-                    result.response_text,
-                    stream_state,
-                )
         if allow_confirmation:
             # Defaults are part of the decision, so apply and display them
             # before the user is asked to approve the trip.
@@ -827,12 +799,6 @@ class TripOrchestrator:
             )
             mark_confirmation_summary_shown(memory)
             result.response_text = build_confirmation_summary(memory)
-            if publisher is not None and stream_state["response_streamed"]:
-                await self._publish_stream_text(
-                    publisher,
-                    result.response_text,
-                    stream_state,
-                )
 
         outcome = TurnOutcome(
             response_text=result.response_text,
@@ -848,7 +814,6 @@ class TripOrchestrator:
             ),
             extracted_fields=extraction.field_names() if extraction else [],
             is_correction=extraction.is_correction if extraction else False,
-            response_streamed=stream_state["response_streamed"],
         )
 
         finalized = await self._finalize_turn(
@@ -969,21 +934,12 @@ class TripOrchestrator:
             failure_payload=[],
             user_message=user_message,
             turn_context=turn_context,
-            publisher=publisher,
-            stream_state={
-                "response_streamed": False,
-                "last_response_text": "",
-                "emitted_response_text": "",
-            },
             advice_requested=True,
             current_advice_context=current_advice_context,
         )
         reminder = "Your trip summary is still ready—reply yes to start planning, or tell me what you’d like to change."
         response_text = result.response_text.strip()
-        if reminder not in response_text:
-            response_text = (
-                f"{response_text}\n\n{reminder}" if response_text else reminder
-            )
+        response_text = response_text or reminder
         return await self._finalize_turn(
             trip=trip,
             memory=memory,
@@ -1005,7 +961,9 @@ class TripOrchestrator:
     def _load_trip_memory(self, trip_id: int) -> tuple[TripRow, TripMemory]:
         """Load one trip row together with its parsed memory object."""
 
-        return load_trip_memory(self.db, trip_id)
+        trip, memory = load_trip_memory(self.db, trip_id)
+        normalize_budget_scope_notes(memory)
+        return trip, memory
 
     @staticmethod
     def _load_memory_from_trip(trip: TripRow) -> TripMemory:
@@ -1116,13 +1074,19 @@ class TripOrchestrator:
         """Apply defaults and finalize the Phase 1 trip-detail collection."""
 
         readiness = assess_collection_readiness(memory)
-        if not readiness.is_ready:
+        pending = memory.internal.pending_clarification
+        if not readiness.is_ready or pending.active:
             memory.metadata.status = transition(
                 TripStatus.AWAITING_CONFIRMATION,
                 TripStatus.COLLECTING,
             )
             outcome = TurnOutcome(
-                response_text=readiness.user_message(),
+                response_text=(
+                    pending.clarification_question
+                    or "Please clarify the outstanding trip detail first."
+                )
+                if pending.active
+                else readiness.user_message(),
                 status=memory.metadata.status,
                 branch="confirmation_blocked_by_readiness",
             )
@@ -1155,12 +1119,12 @@ class TripOrchestrator:
             TripStatus.CONFIRMED,
         )
         await self._publish_live_status(
-            publisher, LiveStatusPhase.FINAL_CHECKS, "Saving your confirmed trip details"
+            publisher,
+            LiveStatusPhase.FINAL_CHECKS,
+            "Saving your confirmed trip details",
         )
         outcome = TurnOutcome(
-            response_text=(
-                "Perfect! Your trip details are confirmed and saved."
-            ),
+            response_text=("Perfect! Your trip details are confirmed and saved."),
             status=memory.metadata.status,
             branch="confirm",
         )
@@ -1509,12 +1473,15 @@ class TripOrchestrator:
         for note in extraction.trip_context_notes or []:
             if note not in memory.internal.trip_context_notes:
                 memory.internal.trip_context_notes.append(note)
+        normalize_budget_scope_notes(memory)
 
     @staticmethod
     def _get_next_tier_a_field(memory: TripMemory) -> str | None:
         """Return the next Tier A optional field to ask, or None if all done."""
 
         for field in TIER_A_FIELDS:
+            if field == "long_distance_modes" and is_local_city_trip(memory):
+                continue
             if field == "num_children":
                 # Infers num_children=0 automatically for solo travelers and senior-only parties so Riya does not ask redundant child questions.
                 if memory.optional.num_children is not None:
@@ -1581,6 +1548,7 @@ class TripOrchestrator:
         extraction,
         changed_fields: list[str],
         publisher,
+        user_message: str,
     ) -> TurnOutcome | None:
         """Run the pre-summary checks and handle gate logic.
 
@@ -1595,19 +1563,6 @@ class TripOrchestrator:
 
         gate = memory.internal.sanity_state.pre_summary_gate
 
-        # If the gate was shown last turn and the user replied without changing
-        # any fields (route == "run_response"), treat it as "proceed" — accept
-        # all blocking checks that were previously surfaced.
-        if gate.gate_awaiting_response and route == "run_response":
-            # Re-run checks with current values so we know which were blocking.
-            await self._publish_live_status(
-                publisher, LiveStatusPhase.VALIDATING, "Checking trip details"
-            )
-            last_result = await run_pre_summary_checks(memory, self.agents)
-            accept_pre_summary_checks(memory, last_result)
-            # Booking window note is preserved in gate; summary will include it.
-            return None  # Let the summary generate normally.
-
         # Run all three checks.
         await self._publish_live_status(
             publisher, LiveStatusPhase.VALIDATING, "Checking trip details"
@@ -1619,6 +1574,15 @@ class TripOrchestrator:
             input_data={"phase": phase},
         )
         result = await run_pre_summary_checks(memory, self.agents)
+        if (
+            gate.gate_awaiting_response
+            and not changed_fields
+            and _is_explicit_confirmation(user_message)
+        ):
+            accept_pre_summary_checks(memory, result)
+            result.issues = [
+                issue for issue in result.issues if issue.check_name != "budget"
+            ]
         await self._publish_trace(
             publisher,
             "orchestrator.pre_summary_gate",
@@ -1632,8 +1596,7 @@ class TripOrchestrator:
         )
 
         if not result.has_blocking_issues:
-            # No blocking issues — booking_window_note is cached in gate for the
-            # summary prompt to use; proceed normally.
+            # The confirmation summary also displays the booking warning.
             gate.gate_awaiting_response = False
             return None
 
@@ -1666,8 +1629,6 @@ class TripOrchestrator:
         failure_payload: list[dict[str, Any]],
         user_message: str,
         turn_context: TurnContext,
-        publisher: Publisher | None = None,
-        stream_state: dict[str, Any] | None = None,
         advice_requested: bool = False,
         current_advice_context: list[str] | None = None,
     ) -> ConversationAgentOutput:
@@ -1680,7 +1641,6 @@ class TripOrchestrator:
             all_field_schemas = build_extraction_current_values(memory)
             next_field_schema = all_field_schemas.get(next_field)
 
-        # Collects deterministic advisories, booking-window note, and trip context notes and passes them as soft context to the conversation agent at summary phase.
         advisories = collect_advisories(memory)
 
         # Fold any booking-window note into the summary advisories so Riya
@@ -1689,11 +1649,22 @@ class TripOrchestrator:
         if booking_note and phase == "summary":
             advisories = list(advisories) + [booking_note]
 
-        # Surface trip context notes at summary so Riya explicitly lists them
-        # for user verification before planning starts.
-        summary_context_notes = (
-            memory.internal.trip_context_notes if phase == "summary" else None
+        if advice_requested and current_advice_context is None:
+            current_advice_context = await self.advice_lookup.lookup(
+                memory, user_message
+            )
+
+        ambiguity = (
+            extraction.mapping_ambiguity.model_dump()
+            if extraction and extraction.mapping_ambiguity
+            else None
         )
+        pending = memory.internal.pending_clarification
+        if ambiguity is None and pending.active:
+            ambiguity = {
+                "question": pending.clarification_question,
+                "candidate_fields": pending.options,
+            }
 
         prompt = build_conversation_task_prompt(
             phase=phase,
@@ -1702,11 +1673,7 @@ class TripOrchestrator:
             missing_required=missing_required,
             changed_fields=changed_fields,
             failure_payload=failure_payload,
-            mapping_ambiguity=(
-                extraction.mapping_ambiguity.model_dump()
-                if extraction and extraction.mapping_ambiguity
-                else None
-            ),
+            mapping_ambiguity=ambiguity,
             is_correction=extraction.is_correction if extraction else False,
             memory_json=serialize_agent_memory_view(memory, "collection"),
             user_message=user_message,
@@ -1715,7 +1682,7 @@ class TripOrchestrator:
             traveler_context=turn_context.traveler_context,
             advisories=advisories,
             destination_intelligence=memory.internal.sanity_state.destination_intelligence,
-            trip_context_notes=summary_context_notes,
+            trip_context_notes=memory.internal.trip_context_notes,
             advice_requested=advice_requested,
             current_advice_context=current_advice_context,
         )
@@ -1724,114 +1691,23 @@ class TripOrchestrator:
             try:
                 if attempt == 1:
                     prompt += REPAIR_SUFFIX
-                stream_method = getattr(
-                    self.agents.conversation,
-                    "run_stream_field",
-                    None,
-                )
-                if publisher is not None and callable(stream_method):
-                    output = await stream_method(
-                        prompt,
-                        field_name="response_text",
-                        on_text=lambda text: self._publish_stream_text(
-                            publisher,
-                            text,
-                            stream_state,
-                        ),
-                    )
-                else:
-                    output = await self.agents.conversation.run(prompt)
+                # Readiness checks can replace this reply with the confirmation
+                # summary. The runtime publishes only the final, saved message.
+                output = await self.agents.conversation.run(prompt)
                 # Apply the terminology guard after every conversation-agent call.
                 output.response_text = _sanitize_user_facing_response(
                     output.response_text
                 )
-                if (
-                    publisher is not None
-                    and stream_state is not None
-                    and stream_state.get("response_streamed")
-                ):
-                    # Push the fully-sanitised final text so the UI ends up
-                    # showing the canonical response (handles double-question
-                    # removal and any other end-of-response sanitiser rules).
-                    await self._publish_stream_text(
-                        publisher,
-                        output.response_text,
-                        stream_state,
-                    )
                 return output
             except AgentRunError as exc:
                 if attempt == 1:
                     logger.error("Conversation agent failed twice: %s", exc)
 
-        fallback = ConversationAgentOutput(
+        return ConversationAgentOutput(
             response_text="I'm having a moment — could you rephrase that?",
             ready_for_confirmation=False,
             field_asked=None,
         )
-        if (
-            publisher is not None
-            and stream_state is not None
-            and stream_state.get("response_streamed")
-        ):
-            await self._publish_stream_text(
-                publisher,
-                fallback.response_text,
-                stream_state,
-            )
-        return fallback
-
-    @staticmethod
-    async def _publish_stream_text(
-        publisher: Publisher,
-        text: str,
-        stream_state: dict[str, Any] | None,
-    ) -> None:
-        """Forward visible conversation text to the UI during LLM generation.
-
-        ``on_text`` supplies the full growing text on each call; this method
-        computes the delta (new characters since the last emission) and sends
-        it as a ``stream`` chunk so the frontend appends tokens in real time.
-
-        Edge-case: when the sanitizer removes text that was already streamed
-        (e.g. the double-question guard fires at the end of a response), a
-        replace event is sent so the frontend can correct the visible text.
-        """
-
-        safe_text = _sanitize_streaming_response(text)
-
-        if stream_state is None:
-            # No delta tracking — send the text directly as a chunk.
-            if safe_text:
-                await publisher.publish_stream_chunk(safe_text)
-            return
-
-        prev_safe = stream_state.get("safe_text", "")
-        if safe_text == prev_safe:
-            return  # Nothing changed — deduplicate.
-
-        stream_state["safe_text"] = safe_text
-
-        if not safe_text:
-            return  # Sanitizer suppressed the partial text; wait for more.
-
-        emitted = stream_state.get("emitted_text", "")
-
-        if safe_text.startswith(emitted):
-            # Normal case: text grew — emit only the new characters.
-            delta = safe_text[len(emitted) :]
-            if delta:
-                if not stream_state.get("processing_status_hidden"):
-                    await publisher.publish_status(LiveStatusPhase.IDLE.value, "")
-                    stream_state["processing_status_hidden"] = True
-                stream_state["response_streamed"] = True
-                stream_state["emitted_text"] = safe_text
-                await publisher.publish_stream_chunk(delta)
-        else:
-            # Sanitizer shortened what was already emitted — replace the whole
-            # visible message so the UI stays consistent.
-            stream_state["response_streamed"] = True
-            stream_state["emitted_text"] = safe_text
-            await publisher.publish_stream_text(safe_text)
 
     async def _run_extraction(
         self,

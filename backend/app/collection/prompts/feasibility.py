@@ -11,6 +11,9 @@ Use broad, practical estimates rather than precise booking prices. Consider the
 route scope, traveller composition, duration, travel pace, spending comfort,
 major transport, accommodation, food, local transport, and a reasonable
 contingency. Do not present an estimate as a confirmed price or availability.
+Respect the stated budget scope: exclude prepaid travel or accommodation and
+costs the traveller explicitly says are outside this budget. A local trip does
+not need flights. Do not impose a fixed minimum based only on country borders.
 If important context is absent, use a more cautious range and explain the
 uncertainty briefly.
 
@@ -41,6 +44,10 @@ def build_feasibility_task_prompt(
     spending_tier: str | None = None,
     long_distance_modes: list[str] | None = None,
     hotel_tier: str | None = None,
+    origin: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    trip_notes: list[str] | None = None,
 ) -> str:
     """Build a compact task using the real traveller composition."""
 
@@ -48,6 +55,8 @@ def build_feasibility_task_prompt(
         f"Destination: {destination}",
         f"Trip scope: {getattr(trip_scope, 'value', trip_scope)}",
         f"Adults: {num_adults}",
+        f"Origin: {origin or 'not specified'}",
+        f"Dates: {start_date or 'not specified'} to {end_date or 'not specified'}",
     ]
     if num_children:
         lines.append(f"Children: {num_children}")
@@ -67,4 +76,6 @@ def build_feasibility_task_prompt(
         lines.append(f"Long-distance transport: {', '.join(long_distance_modes)}")
     if hotel_tier:
         lines.append(f"Accommodation comfort: {hotel_tier}")
+    if trip_notes:
+        lines.append("Budget scope and trip constraints: " + "; ".join(trip_notes))
     return "\n".join(lines)

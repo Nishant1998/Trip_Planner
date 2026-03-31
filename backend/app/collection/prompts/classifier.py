@@ -17,7 +17,8 @@ ROUTES
   advice/explanation that does not adopt a value for the user's trip.
 
 Set advice_requested=true whenever the user asks for recommendations, options,
-ideas, a comparison, or help choosing. This remains true when the message also
+ideas, a comparison, help choosing, or an answer about travel facts such as
+weather, access or transport schedules. This remains true when the message also
 supplies trip details; extraction should still capture those details first.
 
 DECISION RULES
