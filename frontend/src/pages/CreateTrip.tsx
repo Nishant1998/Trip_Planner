@@ -33,21 +33,10 @@ import { useAuth } from '../context/AuthContext'
 import { apiFetch, readApiError } from '../lib/api'
 import { getWelcomeMessage } from '../lib/welcome'
 import { parseBackendPlan, placeholderCover, type NormalizedPlan } from '../lib/plan'
-import { getPlanningState } from '../lib/planning-status'
+import { getPlanningState, mergePlanningProgress, shouldPollTrip, type PlanningJob } from '../lib/planning-status'
 import { applyChatStream, mergeChatMessages, type ChatMessage as Message } from '../lib/chat-messages'
 
-interface JobStatus {
-  status: string
-  progress_percent: number
-  current_step: string
-  current_stage?: string | null
-  progress_kind?: string | null
-  completed_tasks: number
-  total_tasks: number
-  activity_detail?: string | null
-  progress_sequence?: number | null
-  failure_details?: any
-}
+type JobStatus = PlanningJob
 
 interface PlanningStep {
   id: string
@@ -86,6 +75,7 @@ const PLANNING_STEPS: PlanningStep[] = [
   { id: 'starting', label: 'Starting', description: 'Preparing your confirmed trip details.' },
   { id: 'checking_destination', label: 'Checking destination', description: 'Validating your destination and travel route.' },
   { id: 'finding_places', label: 'Finding places', description: 'Finding places that fit your trip.' },
+  { id: 'finding_stays', label: 'Finding stays', description: 'Looking for accommodation options that fit your trip.' },
   { id: 'checking_details', label: 'Checking details', description: 'Checking weather, practical details and current travel information.' },
   { id: 'building_itinerary', label: 'Building itinerary', description: 'Creating your day-by-day itinerary.' },
   { id: 'checking_routes', label: 'Checking routes', description: 'Checking routes and travel times.' },
@@ -93,6 +83,7 @@ const PLANNING_STEPS: PlanningStep[] = [
   { id: 'reviewing_plan', label: 'Reviewing plan', description: 'Reviewing timing, feasibility and your trip preferences.' },
   { id: 'improving_plan', label: 'Improving plan', description: 'Making any needed improvements.' },
   { id: 'finalizing', label: 'Finalising itinerary', description: 'Preparing your finished itinerary.' },
+  { id: 'saving', label: 'Saving itinerary', description: 'Saving your itinerary so you can return to it later.' },
 ]
 
 
@@ -175,6 +166,8 @@ const CreateTrip: React.FC = () => {
   const activeStreamMessageIdRef = useRef<string | null>(null)
   const historyRequestRef = useRef(0)
   const collectionPendingRef = useRef(false)
+  const pendingClientMessageIdRef = useRef<string | null>(null)
+  const jobStatusRequestRef = useRef(false)
   const pendingWelcomeMessageRef = useRef<string | null>(null)
   const previousTripIdRef = useRef<string | undefined>(tripId)
 
@@ -236,6 +229,14 @@ const CreateTrip: React.FC = () => {
         },
       })
       if (request !== historyRequestRef.current || previousTripIdRef.current !== tripId) return
+      const pendingUserIndex = nextMessages.findIndex(message => message.clientMessageId === pendingClientMessageIdRef.current)
+      if (collectionPendingRef.current && pendingClientMessageIdRef.current && pendingUserIndex >= 0
+        && nextMessages.slice(pendingUserIndex + 1).some(message => message.role === 'assistant')) {
+        collectionPendingRef.current = false
+        pendingClientMessageIdRef.current = null
+        setBusy(false)
+        setThinkingStep(null)
+      }
       if (nextMessages.length > 0) {
         const visibleWelcome = pendingWelcomeMessageRef.current
         const persistedWelcome = nextMessages.find((message) => message.isWelcome)
@@ -314,20 +315,30 @@ const CreateTrip: React.FC = () => {
   // refresh while this page is open; the polling effect below covers missed
   // events, reconnects, and users who return to a planning trip later.
   const refreshJobStatus = useCallback(async () => {
-    if (!tripId || !isAuthenticated) return
+    if (!tripId || !isAuthenticated || jobStatusRequestRef.current) return
+    jobStatusRequestRef.current = true
     try {
-      const response = await apiFetch(`/api/trips/${tripId}/job-status`, { headers: headers() })
+      const response = await apiFetch(`/api/trips/${tripId}/job-status`, { headers: headers(), signal: AbortSignal.timeout(30_000) })
       if (!response.ok) return
       const result = (await response.json()) as JobStatus
       if (previousTripIdRef.current !== tripId) return
-      setJob(result.status === 'idle' || result.status === 'not_started' ? null : result)
+      setJob(current => result.status === 'idle' || result.status === 'not_started'
+        ? current?.failure?.code === 'planning_start_failed' ? current : null
+        : result)
+      if (['queued', 'running', 'completed', 'failed', 'interrupted'].includes(result.status)) {
+        collectionPendingRef.current = false
+        setBusy(false)
+        setThinkingStep(null)
+      }
       if (result.status === 'completed') {
-        await Promise.all([loadTrip(true), loadPlan(true)])
+        await Promise.all([loadTrip(true), loadPlan(true), loadMessages(true)])
       }
     } catch (err) {
       console.error('[CreateTrip] refresh job status failed', err)
+    } finally {
+      jobStatusRequestRef.current = false
     }
-  }, [headers, isAuthenticated, loadPlan, loadTrip, tripId])
+  }, [headers, isAuthenticated, loadPlan, loadTrip, loadMessages, tripId])
 
   // Initial Load
   useEffect(() => {
@@ -442,9 +453,9 @@ const CreateTrip: React.FC = () => {
     let retryCount = 0
 
     const reconnect = () => {
-      if (controller.signal.aborted || retryCount >= 5) return
+      if (controller.signal.aborted) return
       const delay = Math.min(1_000 * 2 ** retryCount, 15_000)
-      retryCount += 1
+      retryCount = Math.min(retryCount + 1, 4)
       retryTimer = window.setTimeout(() => void stream(), delay)
     }
 
@@ -500,6 +511,19 @@ const CreateTrip: React.FC = () => {
                 // Progress is already durable in planning_jobs before this
                 // event is published. Read it immediately for live updates.
                 void refreshJobStatus()
+                if (payload.status === 'failed' && !payload.run_id) {
+                  collectionPendingRef.current = false
+                  setBusy(false)
+                  setThinkingStep(null)
+                  setJob({ status: 'failed', progress_percent: 0,
+                    failure: { code: payload.code ?? 'planning_start_failed' } })
+                }
+              }
+              if (name === 'planning_progress') {
+                setJob(current => mergePlanningProgress(current, payload))
+                collectionPendingRef.current = false
+                setBusy(false)
+                setThinkingStep(null)
               }
               if (name === 'error_event' && payload.message) {
                 collectionPendingRef.current = false
@@ -574,14 +598,19 @@ const CreateTrip: React.FC = () => {
     // Phase 1 does not create a planning job. Polling it here was repeatedly
     // calling the protected endpoint before authentication (and for every
     // collecting trip), which flooded the backend with 401 responses.
-    const isPlanning = trip?.status === 'planning' || job?.status === 'running' || job?.status === 'queued'
-    if (!tripId || !isAuthenticated || !isPlanning) return
-    void refreshJobStatus()
+    if (!tripId || !isAuthenticated || !shouldPollTrip(trip?.status, job?.status, busy)) return
+    let stopped = false
+    let timer: number | undefined
+    const recover = async () => {
+      await refreshJobStatus()
+      if (collectionPendingRef.current) await Promise.all([loadMessages(true), loadTrip(true)])
+      if (!stopped) timer = window.setTimeout(() => void recover(), 10_000)
+    }
+    void recover()
     // SSE normally delivers the change immediately. Ten seconds is only the
     // recovery interval, keeping the UI correct if a stream is interrupted.
-    const timer = window.setInterval(() => void refreshJobStatus(), 10_000)
-    return () => window.clearInterval(timer)
-  }, [tripId, isAuthenticated, trip?.status, job?.status, plan, refreshJobStatus])
+    return () => { stopped = true; if (timer !== undefined) window.clearTimeout(timer) }
+  }, [tripId, isAuthenticated, trip?.status, job?.status, busy, refreshJobStatus, loadMessages, loadTrip])
 
   // Send Message
   const handleSendMessage = async (textToSend?: string) => {
@@ -608,6 +637,7 @@ const CreateTrip: React.FC = () => {
 
     // Immediately reflect the user's message in the chat
     const clientMessageId = crypto.randomUUID()
+    pendingClientMessageIdRef.current = clientMessageId
     const userMsg: Message = {
       id: `u_${clientMessageId}`,
       role: 'user',
@@ -705,7 +735,7 @@ const CreateTrip: React.FC = () => {
           setBusy(false)
           setThinkingStep(null)
         } else {
-          setThinkingStep('Riya is reviewing your message…')
+          if (collectionPendingRef.current) setThinkingStep(current => current ?? 'Riya is reviewing your message…')
           void queryClient.invalidateQueries({ queryKey: ['trips'] })
         }
       } catch (err) {
@@ -779,9 +809,12 @@ const CreateTrip: React.FC = () => {
   )
   const showPlanningCanvas = isPlanning
   const isComposerLocked = hasPlanningStarted
-  const planningFailureMessage = typeof job?.failure_details?.message === 'string'
-    ? job.failure_details.message
-    : 'We could not finish this itinerary. You can retry planning.'
+  const planningFailureMessage = job?.failure?.code === 'storage_failed'
+    ? 'The itinerary was generated, but saving failed. Please retry planning.'
+    : job?.status === 'interrupted'
+      ? 'Planning was interrupted. Please retry to continue.'
+      : 'We could not finish this itinerary. You can retry planning.'
+  const planningActivity = PLANNING_STEPS.find(step => step.id === job?.current_stage) ?? PLANNING_STEPS[0]
 
   useEffect(() => {
     if (isPlanning || isDone) setIsCanvasOpen(true)
@@ -855,7 +888,7 @@ const CreateTrip: React.FC = () => {
               {isDone
                 ? '✓ Itinerary draft • Review details before booking'
                 : isPlanning
-                ? '● Solving route & verified opening hours...'
+                ? `● ${planningActivity.label}...`
                 : '● Interactive Discovery with AI Riya'}
             </p>
           </div>
@@ -976,12 +1009,12 @@ const CreateTrip: React.FC = () => {
               </div>
             ))}
 
-            {busy && thinkingStep && (
+            {(isPlanning || (busy && thinkingStep)) && (
               <div role="status" aria-live="polite" className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50/80 border border-indigo-100 px-3.5 py-2 rounded-xl max-w-sm animate-pulse ml-10 shadow-2xs">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-600" />
                 <span>
-                  {thinkingStep.replace(/[.…]+$/, '')}
-                  <span aria-hidden="true">{processingDots}</span>
+                  {isPlanning ? `${planningActivity.label}${job?.activity_detail ? ` — ${job.activity_detail}` : ''}` : thinkingStep?.replace(/[.…]+$/, '')}
+                  {!isPlanning && <span aria-hidden="true">{processingDots}</span>}
                 </span>
               </div>
             )}
@@ -1036,7 +1069,7 @@ const CreateTrip: React.FC = () => {
                     !isAuthenticated
                       ? 'Type your trip request (Sign-in required to plan)...'
                       : isComposerLocked
-                      ? 'Planning is in progress. Chat is locked for this trip.'
+                      ? hasPlanningFailure ? 'Planning stopped. Use the retry button below.' : 'Planning is in progress. Chat is locked for this trip.'
                       : 'Describe what you want for this trip...'
                   }
                   disabled={isComposerLocked}
@@ -1133,7 +1166,7 @@ const CreateTrip: React.FC = () => {
                       <span>Planning Engine Active</span>
                     </div>
                     <span className="text-xs font-mono font-bold text-slate-400">
-                      {job?.completed_tasks ?? 0} of {job?.total_tasks ?? PLANNING_STEPS.length} planning steps complete
+                      About {job?.progress_percent ?? 0}% complete
                     </span>
                   </div>
 
@@ -1141,7 +1174,7 @@ const CreateTrip: React.FC = () => {
                     {`Building your ${destinationName} itinerary`}
                   </h3>
                   <p className="text-xs sm:text-sm font-semibold text-indigo-600 mb-6">
-                    {job?.current_step || 'Preparing your confirmed trip details...'}
+                    {planningActivity.label}
                   </p>
 
                   <div className="w-full bg-slate-100 rounded-full h-3 mb-6 overflow-hidden border border-slate-200">
@@ -1153,37 +1186,16 @@ const CreateTrip: React.FC = () => {
                 </div>
 
                 <section className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:p-5" aria-live="polite">
-                  <div className="relative ml-1">
-                    <div className="absolute left-[13px] top-4 bottom-4 w-px bg-slate-200" aria-hidden="true" />
-                    <div className="space-y-1.5">
-                      {PLANNING_STEPS.map((step, index) => {
-                        const currentStageIndex = Math.max(0, PLANNING_STEPS.findIndex((item) => item.id === job?.current_stage))
-                        const completedCount = job?.completed_tasks ?? 0
-                        const isComplete = index < completedCount || (index === currentStageIndex && job?.progress_kind === 'stage_completed')
-                        const isCurrent = !isComplete && index === currentStageIndex && completedCount < PLANNING_STEPS.length
-                        const description = job?.activity_detail || step.description
-                        return (
-                          <div key={step.id} className={`relative flex items-start gap-3 rounded-xl px-2 py-1.5 transition-all duration-300 ${isCurrent ? 'bg-indigo-50 border border-indigo-100 py-2.5 shadow-2xs' : 'border border-transparent'}`}>
-                            <div className={`relative z-10 mt-0.5 h-7 w-7 rounded-full flex items-center justify-center text-[11px] font-black shrink-0 border ${
-                              isComplete
-                                ? 'bg-emerald-500 border-emerald-500 text-white'
-                                : isCurrent
-                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm shadow-indigo-600/30'
-                                : 'bg-white border-slate-300 text-slate-400'
-                            }`}>
-                              {isComplete ? <CheckCircle2 className="w-4 h-4" /> : isCurrent ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : index + 1}
-                            </div>
-                            <div className="min-w-0 pt-0.5">
-                              <p className={`text-xs sm:text-sm font-bold ${isCurrent ? 'text-indigo-700' : isComplete ? 'text-slate-800' : 'text-slate-400'}`}>{step.label}</p>
-                              {isCurrent && <p className="mt-0.5 text-[11px] sm:text-xs leading-relaxed text-indigo-600">{description}</p>}
-                            </div>
-                          </div>
-                        )
-                      })}
+                  <div className="flex items-start gap-3 rounded-xl border border-indigo-100 bg-indigo-50 p-4">
+                    <Loader2 className="mt-0.5 h-5 w-5 shrink-0 animate-spin text-indigo-600" />
+                    <div>
+                      <p className="text-sm font-bold text-indigo-700">{planningActivity.label}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-indigo-600">{planningActivity.description}</p>
+                      {job?.activity_detail && <p className="mt-2 text-xs font-semibold text-indigo-700">{job.activity_detail}</p>}
                     </div>
                   </div>
                   <p className="mt-4 border-t border-slate-200 pt-3 text-[11px] leading-relaxed text-slate-500 text-center">
-                    You can close this page — planning continues safely in the background.
+                    Progress is approximate. Some steps may repeat as the itinerary is reviewed. Planning continues while the server is running.
                   </p>
                 </section>
               </div>

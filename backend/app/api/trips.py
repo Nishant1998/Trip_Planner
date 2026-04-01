@@ -238,7 +238,7 @@ def register_trip_routes(
         }
 
     @router.get("/{slug_or_id}")
-    async def get_trip_detail(
+    def get_trip_detail(
         slug_or_id: str,
         user: AuthenticatedUser = Depends(current_user),
     ) -> dict[str, Any]:
@@ -295,7 +295,7 @@ def register_trip_routes(
         return {"success": ok}
 
     @router.get("/{slug_or_id}/messages", response_model=TripMessagesResponse)
-    async def get_trip_messages(
+    def get_trip_messages(
         slug_or_id: str,
         user: AuthenticatedUser = Depends(current_user),
     ) -> TripMessagesResponse:
@@ -361,7 +361,7 @@ def register_trip_routes(
     ) -> StreamingResponse:
         """Server-Sent Events (SSE) stream for status tags, text chunks, and suggestions."""
         trip = require_trip_owner(
-            require_trip_by_slug_or_id(repository, slug_or_id), user
+            await asyncio.to_thread(require_trip_by_slug_or_id, repository, slug_or_id), user
         )
 
         async def event_generator() -> AsyncIterator[str]:
@@ -373,7 +373,7 @@ def register_trip_routes(
                     "message": "Working on your trip details" if processing else "",
                     "turn_complete": not processing,
                 })
-                checkpoint = repository.get_pending_checkpoint(trip.id)
+                checkpoint = await asyncio.to_thread(repository.get_pending_checkpoint, trip.id)
                 if checkpoint:
                     yield format_sse("checkpoint", checkpoint.payload)
 

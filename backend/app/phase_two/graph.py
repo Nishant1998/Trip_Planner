@@ -11,6 +11,7 @@ import asyncio
 import copy
 import hashlib
 import json
+import logging
 from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -45,6 +46,8 @@ from .budget import spending_targets
 from .editorial import apply_editorial_copy
 from .itinerary_fallback import fallback_days
 from .validation import validate_plan
+
+logger = logging.getLogger(__name__)
 
 Specialist = Callable[[TripState], Awaitable[Mapping[str, Any]]]
 ItinerarySpecialist = Callable[[TripState, str], Awaitable[Mapping[str, Any]]]
@@ -467,6 +470,8 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
     async def aggregator(state: TripState) -> dict[str, Any]:
         """Format accepted state only; scheduling never happens here."""
         request, run = state["user_preferences"], state["run"]
+        if handlers.progress:
+            await handlers.progress("review", state["routing"].delegation_count)
         warnings = list(state["warnings"])
         if not state["itinerary"]:
             state = {**state, "itinerary": fallback_days(request)}
@@ -501,6 +506,8 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
         display_days = state["itinerary"]
         local_tips, packing_list = [], []
         if handlers.presentation:
+            if handlers.progress:
+                await handlers.progress("presentation", state["routing"].delegation_count)
             try:
                 remaining = (run.deadline_at - datetime.now(UTC)).total_seconds() - 5
                 if remaining <= 0:
@@ -563,12 +570,17 @@ def build_graph(handlers: GraphHandlers | None = None, *, checkpointer=None):
         )
         persistence: dict[str, Any] = {"status": "unavailable"}
         if handlers.persist:
+            if handlers.progress:
+                await handlers.progress("saving", state["routing"].delegation_count)
             try:
                 persistence = {
                     "status": "saved",
-                    "plan_id": await asyncio.wait_for(handlers.persist(plan), 5),
+                    # Database calls have their own connection/query limits.
+                    # Cancelling a worker-thread save cannot roll it back.
+                    "plan_id": await handlers.persist(plan),
                 }
             except Exception:  # noqa: BLE001 - storage failure is exposed explicitly in result
+                logger.exception("Plan save failed", extra={"run_id": run.run_id, "trip_id": run.trip_id})
                 persistence = {"status": "failed"}
                 warnings.append(
                     PlanWarning(

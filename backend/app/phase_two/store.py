@@ -14,6 +14,16 @@ def completed_job_status(row):
     if row is None:
         return None
     result = dict(row)
+    saved_plan_id = result.pop("saved_plan_id", None)
+    if (
+        saved_plan_id
+        and result["status"] == "failed"
+        and (result.get("failure") or {}).get("code") == "storage_failed"
+    ):
+        result.update(
+            status="completed", current_step="Saved", progress_percent=100,
+            failure=None, result={**(result.get("result") or {}), "plan_id": saved_plan_id},
+        )
     if (
         result["status"] in {"complete", "partial"}
         and result.get("progress_percent") == 100
@@ -69,7 +79,15 @@ class PlanningStore:
         def read():
             with self.repository._connect() as conn:
                 row = conn.execute(
-                    "SELECT id,status,progress_percent,current_step,result,failure FROM planning_jobs WHERE trip_id=%s ORDER BY created_at DESC,id DESC LIMIT 1",
+                    """SELECT j.id,j.status,j.progress_percent,j.current_step,
+                              j.result,j.failure,j.updated_at,p.id AS saved_plan_id
+                       FROM planning_jobs j
+                       LEFT JOIN confirmed_trip_snapshots s
+                         ON s.id=j.snapshot_id AND s.is_current=TRUE
+                       LEFT JOIN trip_plans p
+                         ON p.job_id=j.id AND p.is_active=TRUE AND s.id IS NOT NULL
+                       WHERE j.trip_id=%s
+                       ORDER BY j.created_at DESC,j.id DESC LIMIT 1""",
                     (trip_id,),
                 ).fetchone()
                 return completed_job_status(row)

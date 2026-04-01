@@ -22,20 +22,33 @@ class DisplayRequest(BaseModel):
 
 
 def register_planning_routes(router, repository, service):
-    def own(slug, user):
-        return require_trip_owner(require_trip_by_slug_or_id(repository, slug), user)
+    async def own(slug, user):
+        trip = await asyncio.to_thread(require_trip_by_slug_or_id, repository, slug)
+        return require_trip_owner(trip, user)
 
     @router.get("/{slug_or_id}/job-status")
-    async def job_status(slug_or_id: str, user: CurrentUser):
-        trip = own(slug_or_id, user)
-        return await service.store.status(trip.id) or {
-            "status": "not_started",
-            "enabled": service.enabled,
+    async def job_status(slug_or_id: str, user: CurrentUser, response: Response):
+        trip = await own(slug_or_id, user)
+        response.headers["Cache-Control"] = "no-store"
+        job = await service.store.status(trip.id)
+        if job is None:
+            return {"status": "not_started", "enabled": service.enabled}
+        stages = {
+            "Starting": "starting", "research": "finding_places",
+            "allocation": "building_itinerary", "accommodation": "finding_stays",
+            "transport": "checking_routes", "schedule": "building_itinerary",
+            "review": "reviewing_plan", "presentation": "finalizing", "saving": "saving",
         }
+        job["current_stage"] = stages.get(job.get("current_step"), "starting")
+        event = getattr(service, "latest_progress", {}).get(trip.id)
+        if event and event["run_id"] == job["id"] and job["status"] == "running":
+            job.update(current_stage=event["stage"], activity_detail=event["detail"],
+                       progress_kind=event["kind"], progress_sequence=event["sequence"])
+        return job
 
     @router.get("/{slug_or_id}/plan")
     async def get_plan(slug_or_id: str, user: CurrentUser, response: Response):
-        trip = own(slug_or_id, user)
+        trip = await own(slug_or_id, user)
         response.headers["Cache-Control"] = "no-store"
         plan = await asyncio.to_thread(repository.get_active_trip_plan, trip.id)
         if not plan:
@@ -77,7 +90,7 @@ def register_planning_routes(router, repository, service):
 
     @router.post("/{slug_or_id}/planning/retry", status_code=202)
     async def retry(slug_or_id: str, user: CurrentUser):
-        trip = own(slug_or_id, user)
+        trip = await own(slug_or_id, user)
         if not service.enabled:
             raise HTTPException(503, "Planning is disabled pending acceptance.")
         try:
@@ -89,7 +102,7 @@ def register_planning_routes(router, repository, service):
 
     @router.get("/{slug_or_id}/plan/view", response_class=HTMLResponse)
     async def plan_view(slug_or_id: str, user: CurrentUser):
-        trip = own(slug_or_id, user)
+        trip = await own(slug_or_id, user)
         saved = await asyncio.to_thread(repository.get_active_trip_plan, trip.id)
         if not saved:
             raise HTTPException(404, "No saved plan is available.")
@@ -103,7 +116,7 @@ def register_planning_routes(router, repository, service):
 
     @router.post("/{slug_or_id}/plan/display")
     async def display(slug_or_id: str, payload: DisplayRequest, user: CurrentUser):
-        trip = own(slug_or_id, user)
+        trip = await own(slug_or_id, user)
         if not service.enabled:
             raise HTTPException(503, "Planning is disabled pending acceptance.")
         plan = await asyncio.to_thread(repository.get_active_trip_plan, trip.id)

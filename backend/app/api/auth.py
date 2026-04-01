@@ -285,7 +285,7 @@ async def logout(
     return {"success": True}
 
 
-async def current_user(
+def current_user(
     request: Request,
     authorization: str | None = Header(default=None),
     x_dev_user_id: int | None = Header(default=None),

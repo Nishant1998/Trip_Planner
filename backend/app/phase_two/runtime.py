@@ -65,7 +65,7 @@ ROLE_SPECS = {
         PROMPTS["supervisor"],
         RoutingDecision,
         (),
-        PlanningStage.STARTING,
+        PlanningStage.REVIEWING_PLAN,
         ("agent_status", "routing", "validation", "warnings"),
     ),
     "destination_research": RoleSpec(
@@ -98,7 +98,7 @@ ROLE_SPECS = {
         PROMPTS["accommodation"],
         OptionsOutput,
         ("accommodation",),
-        PlanningStage.ESTIMATING_COSTS,
+        PlanningStage.FINDING_STAYS,
         ("destinations", "stay_requests", "hotels", "validation", "pending_jobs"),
     ),
     "transport_booking": RoleSpec(

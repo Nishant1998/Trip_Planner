@@ -3,12 +3,14 @@
 import asyncio
 import hashlib
 import json
+import logging
 import os
 
 from app.models.state import load_runtime_memory
 from app.planning_tools.catalog import PlanningToolCatalog
 from app.providers.tool_loop import OpenAIResponsesToolModel
 from app.services.progress import ProgressReporter
+from app.models.progress import PlanningStage
 
 from .agents import AGENT_TEMPLATES
 from .graph import GraphHandlers, build_graph, initial_state
@@ -18,12 +20,17 @@ from .runtime import SixAgentRuntime
 from .ephemeral import EphemeralPlans
 from .store import PlanningStore
 
+logger = logging.getLogger(__name__)
+
 
 class PlanningProgressSink:
-    def __init__(self, bus, trip_id):
+    def __init__(self, bus, trip_id, latest=None):
         self.bus, self.trip_id = bus, trip_id
+        self.latest = latest
 
     async def publish(self, event):
+        if self.latest is not None:
+            self.latest[self.trip_id] = event.model_dump(mode="json")
         # Only typed stage/status messages, never raw arguments/provider data.
         await self.bus.publish(
             self.trip_id, "planning_progress", event.model_dump(mode="json")
@@ -57,6 +64,7 @@ class PlanningService:
         self.tasks = set()
         self.display_plans = EphemeralPlans()
         self.semaphore = asyncio.Semaphore(2)
+        self.latest_progress = {}
 
     @staticmethod
     def _model():
@@ -82,6 +90,7 @@ class PlanningService:
         try:
             return await self.start(trip_id)
         except Exception:  # noqa: BLE001 - isolate planning failure from successful Phase 1 confirmation
+            logger.exception("Planning admission failed", extra={"trip_id": trip_id})
             # Collection confirmation remains successful even if planning admission fails.
             await self.event_bus.publish(
                 trip_id,
@@ -133,26 +142,30 @@ class PlanningService:
                 if catalog.bright_data:
                     catalog.bright_data.journal = journal
                 progress = ProgressReporter(
-                    job["id"], PlanningProgressSink(self.event_bus, request.trip_id)
+                    job["id"], PlanningProgressSink(self.event_bus, request.trip_id, self.latest_progress)
                 )
                 runtime = SixAgentRuntime(model, catalog, progress)
                 agents = {name: cls(runtime) for name, cls in AGENT_TEMPLATES.items()}
                 highest_progress = 0
 
                 async def save(plan):
-                    return await self.store.save_plan(plan, request.snapshot_id)
+                    async with progress.track(PlanningStage.SAVING):
+                        return await self.store.save_plan(plan, request.snapshot_id)
 
                 async def stage(task, routing_count):
                     nonlocal highest_progress
                     # Stages are estimates; never report 100 before save succeeds.
                     percent = min(
-                        90,
+                        95,
                         {
                             "research": 10,
                             "allocation": 30,
                             "accommodation": 45,
                             "transport": 60,
                             "schedule": 80,
+                            "review": 90,
+                            "presentation": 92,
+                            "saving": 95,
                         }[task]
                         + (5 if routing_count > 5 else 0),
                     )
@@ -221,6 +234,7 @@ class PlanningService:
                 )
                 raise
             except Exception:  # noqa: BLE001 - background job boundary, expose safe failure code
+                logger.exception("Planning failed", extra={"trip_id": request.trip_id, "run_id": job["id"]})
                 await self.store.update(
                     job["id"],
                     "failed",
@@ -234,6 +248,7 @@ class PlanningService:
                     {"run_id": job["id"], "status": "failed"},
                 )
             finally:
+                self.latest_progress.pop(request.trip_id, None)
                 if catalog:
                     await catalog.close()
                 if model and hasattr(model, "close"):

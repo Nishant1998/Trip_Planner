@@ -20,6 +20,7 @@ class PlanningStage(StrEnum):
     STARTING = "starting"
     CHECKING_DESTINATION = "checking_destination"
     FINDING_PLACES = "finding_places"
+    FINDING_STAYS = "finding_stays"
     CHECKING_DETAILS = "checking_details"
     BUILDING_ITINERARY = "building_itinerary"
     CHECKING_ROUTES = "checking_routes"
@@ -27,6 +28,7 @@ class PlanningStage(StrEnum):
     REVIEWING_PLAN = "reviewing_plan"
     IMPROVING_PLAN = "improving_plan"
     FINALIZING = "finalizing"
+    SAVING = "saving"
 
     @property
     def message(self) -> str:
