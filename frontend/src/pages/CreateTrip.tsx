@@ -7,8 +7,6 @@ import {
   Calendar,
   MapPin,
   Car,
-  Hotel,
-  Download,
   CheckCircle2,
   Lock,
   Info,
@@ -19,7 +17,6 @@ import {
   Users,
   Wallet,
   Layers,
-  Map,
   ExternalLink,
   Sun,
   CheckSquare,
@@ -35,6 +32,9 @@ import { getWelcomeMessage } from '../lib/welcome'
 import { parseBackendPlan, placeholderCover, type NormalizedPlan } from '../lib/plan'
 import { getPlanningState, mergePlanningProgress, shouldPollTrip, type PlanningJob } from '../lib/planning-status'
 import { applyChatStream, mergeChatMessages, type ChatMessage as Message } from '../lib/chat-messages'
+import ItineraryOverview from '../components/ItineraryOverview'
+import ItineraryReview from '../components/ItineraryReview'
+import ItineraryTabs, { type ItinerarySection } from '../components/ItineraryTabs'
 
 type JobStatus = PlanningJob
 
@@ -156,7 +156,7 @@ const CreateTrip: React.FC = () => {
   const [displayError, setDisplayError] = useState<string | null>(null)
   const [isInitialTripLoading, setIsInitialTripLoading] = useState(Boolean(tripId && (!cachedTrip || !cachedMessages)))
   const [isCanvasOpen, setIsCanvasOpen] = useState<boolean>(false)
-  const [activeTab, setActiveTab] = useState<'timeline' | 'map' | 'stays' | 'tips'>('timeline')
+  const [activeTab, setActiveTab] = useState<ItinerarySection>('timeline')
   const [selectedDayFilter, setSelectedDayFilter] = useState<number | 'all'>('all')
   const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({})
 
@@ -1203,122 +1203,14 @@ const CreateTrip: React.FC = () => {
 
             {/* STATE 3: Finalized Master Itinerary Canvas */}
             {isDone && plan && (
-              <div className="flex-1 flex flex-col h-full overflow-hidden">
-                {/* Header Banner */}
-                <div className="p-4 sm:p-5 border-b border-slate-200 bg-gradient-to-r from-indigo-600 to-violet-700 text-white flex flex-wrap items-center justify-between gap-4 shrink-0 print:bg-indigo-700 print:text-white print:rounded-2xl print:mb-4">
-                  <div>
-                    <h2 className="text-lg sm:text-xl font-black">{plan.destination} Itinerary Draft</h2>
-                    <p className="text-xs text-indigo-100 mt-0.5">
-                      {plan.durationDays} Days • {plan.travelers?.adults ?? 0} Adults • Trip budget: {plan.currency} {plan.budgetTotal}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2 print:hidden">
-                    <button
-                      onClick={() => window.print()}
-                      className="px-3.5 py-1.5 rounded-xl bg-white/20 hover:bg-white/30 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer"
-                    >
-                      <Download className="w-3.5 h-3.5" /> Export PDF
-                    </button>
-                  </div>
-                </div>
-
-                {plan.deliveryStatus === 'adjusted_draft' && (
-                  <div className="px-4 sm:px-5 py-3 border-b border-amber-200 bg-amber-50 text-amber-950 text-xs sm:text-sm leading-relaxed print:hidden">
-                    <span className="font-black">Adjusted plan:</span> Some details could not be verified automatically. Use this itinerary as a guide and confirm routes, opening hours, availability and prices before booking.
-                  </div>
-                )}
-
-                {(plan.alerts.length > 0 || plan.budgetHealth.withinBudget !== undefined) && (
-                  <div className="px-4 sm:px-5 py-3 border-b border-slate-200 bg-slate-50 space-y-2">
-                    {plan.budgetHealth.withinBudget !== undefined && (
-                      <div className={`text-xs font-bold rounded-xl px-3 py-2 border ${
-                        plan.budgetHealth.withinBudget
-                          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                          : 'bg-amber-50 text-amber-900 border-amber-200'
-                      }`}>
-                        {plan.budgetHealth.withinBudget ? 'Budget check: this itinerary is within your target.' : 'Budget check: this itinerary may exceed your target.'}
-                      </div>
-                    )}
-                    {plan.alerts.filter((alert, index) => alert.severity === 'error' || index === 0).map((alert, index) => (
-                      <div key={`${alert.message}-${index}`} className="text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-                        {alert.message}
-                      </div>
-                    ))}
-                    {plan.alerts.some((alert, index) => alert.severity !== 'error' && index > 0) && (
-                      <details className="text-xs text-amber-900">
-                        <summary className="cursor-pointer font-semibold">More planning notes &amp; confirmations</summary>
-                        <ul className="mt-2 space-y-2 max-h-48 overflow-y-auto">
-                          {plan.alerts.filter((alert, index) => alert.severity !== 'error' && index > 0).map((alert, index) => <li key={`${index}-${alert.message}`}>{alert.message}</li>)}
-                        </ul>
-                      </details>
-                    )}
-                  </div>
-                )}
-
-                <div className="px-4 sm:px-5 py-2.5 border-b border-indigo-100 bg-indigo-50 text-xs text-indigo-900">
-                  <span className="font-bold">Before booking:</span> This AI-generated itinerary is a planning draft. Confirm routes, prices, opening hours, and reservations independently.
-                </div>
-                {plan.displayRefreshRequired && Boolean(plan.placeIds?.length) && (
-                  <div className="px-4 sm:px-5 py-3 border-b border-slate-200 text-xs text-slate-700 print:hidden">
-                    <p>Saved place details have expired. Refresh up to ten selected places; no itinerary generation or photo downloads.</p>
-                    <button type="button" onClick={refreshPlanDisplay} disabled={refreshingDisplay}
-                      className="mt-2 inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 font-semibold disabled:opacity-50">
-                      <RefreshCw className={`h-3.5 w-3.5 ${refreshingDisplay ? 'animate-spin' : ''}`} />
-                      {refreshingDisplay ? 'Refreshing place details…' : 'Refresh place details'}
-                    </button>
-                    {displayError && <p role="alert" className="mt-2 text-amber-800">{displayError}</p>}
-                  </div>
-                )}
-
-                {plan.summary && <p className="border-b border-slate-200 px-4 py-4 text-sm leading-relaxed text-slate-700 sm:px-5">{plan.summary}</p>}
-
-                {/* 4 Interactive Navigation Tabs */}
-                <div className="flex border-b border-slate-200 bg-slate-50 px-3 sm:px-4 shrink-0 overflow-x-auto print:hidden">
-                  <button
-                    onClick={() => setActiveTab('timeline')}
-                    className={`py-3 px-3.5 text-xs font-bold border-b-2 transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                      activeTab === 'timeline'
-                        ? 'border-indigo-600 text-indigo-700 bg-white'
-                        : 'border-transparent text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    <Calendar className="w-3.5 h-3.5" /> Timeline
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('map')}
-                    className={`py-3 px-3.5 text-xs font-bold border-b-2 transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                      activeTab === 'map'
-                        ? 'border-indigo-600 text-indigo-700 bg-white'
-                        : 'border-transparent text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    <Map className="w-3.5 h-3.5" /> Map & Stops
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('stays')}
-                    className={`py-3 px-3.5 text-xs font-bold border-b-2 transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                      activeTab === 'stays'
-                        ? 'border-indigo-600 text-indigo-700 bg-white'
-                        : 'border-transparent text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    <Hotel className="w-3.5 h-3.5" /> Stays & Dining
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('tips')}
-                    className={`py-3 px-3.5 text-xs font-bold border-b-2 transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
-                      activeTab === 'tips'
-                        ? 'border-indigo-600 text-indigo-700 bg-white'
-                        : 'border-transparent text-slate-500 hover:text-slate-800'
-                    }`}
-                  >
-                    <Info className="w-3.5 h-3.5" /> Tips & Packing
-                  </button>
-                </div>
+              <div className="flex-1 min-h-0 overflow-y-auto print:overflow-visible">
+                <ItineraryOverview plan={plan} onReview={() => setActiveTab('review')}
+                  onRefresh={refreshPlanDisplay} refreshing={refreshingDisplay} refreshError={displayError} />
+                <ItineraryTabs active={activeTab} onChange={setActiveTab}
+                  issues={plan.alerts.filter(alert => alert.severity === 'error').length} />
 
                 {/* Tab Contents & Printable Document */}
-                <div className="flex-1 p-4 sm:p-6 overflow-y-auto print:p-0 print:overflow-visible space-y-6">
+                <div className="p-4 sm:p-6 print:p-0 space-y-6">
                   {/* SECTION 1: TIMELINE */}
                   <div className={`${activeTab === 'timeline' ? 'block' : 'hidden'} print:block space-y-6 print:mb-8`}>
                     <div className="flex items-center gap-1.5 pb-2 overflow-x-auto print:hidden">
@@ -1401,7 +1293,7 @@ const CreateTrip: React.FC = () => {
                                       <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-bold text-xs">
                                         {act.time}
                                       </span>
-                                      <h4 className="font-bold text-xs sm:text-sm text-slate-900 truncate">
+                                      <h4 className="break-words font-bold text-xs leading-relaxed sm:text-sm text-slate-900">
                                         {act.title}
                                       </h4>
                                     </div>
@@ -1599,37 +1491,9 @@ const CreateTrip: React.FC = () => {
                       </div>
                     </div>
 
-                    {(Object.keys(plan.budgetHealth.categories).length > 0 || plan.planningNotes.length > 0 || plan.sources.length > 0) && (
-                      <details className="rounded-2xl border border-slate-200 bg-white p-4 print:hidden">
-                        <summary className="cursor-pointer text-sm font-bold text-slate-800">Trip details & planning notes</summary>
-                        <div className="mt-4 space-y-4 text-xs text-slate-600">
-                          {Object.keys(plan.budgetHealth.categories).length > 0 && (
-                            <div>
-                              <h4 className="font-bold text-slate-800 mb-2">Budget breakdown</h4>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                {Object.entries(plan.budgetHealth.categories).map(([category, value]) => (
-                                  <div key={category} className="rounded-xl bg-slate-50 px-3 py-2 border border-slate-100 flex justify-between gap-3">
-                                    <span className="capitalize">{category.replace(/_/g, ' ')}</span><span className="font-semibold text-slate-800">{value}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                          {plan.planningNotes.length > 0 && (
-                            <div>
-                              <h4 className="font-bold text-slate-800 mb-2">Things to know</h4>
-                              <ul className="space-y-2">{plan.planningNotes.map((note, index) => <li key={index} className="flex gap-2"><span className="text-indigo-600">•</span><span>{note}</span></li>)}</ul>
-                            </div>
-                          )}
-                          {plan.sources.length > 0 && (
-                            <div>
-                              <h4 className="font-bold text-slate-800 mb-2">Helpful sources</h4>
-                              <div className="flex flex-wrap gap-2">{plan.sources.map((source, index) => <a key={`${source.url}-${index}`} href={source.url} target="_blank" rel="noreferrer" className="text-indigo-700 hover:underline font-semibold">{source.title}</a>)}</div>
-                            </div>
-                          )}
-                        </div>
-                      </details>
-                    )}
+                  </div>
+                  <div className={`${activeTab === 'review' ? 'block' : 'hidden'} print:block print:break-before-page`}>
+                    <ItineraryReview plan={plan} />
                   </div>
                 </div>
               </div>
