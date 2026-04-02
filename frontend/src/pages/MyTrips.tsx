@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Calendar,
+  Check,
   MapPin,
   ArrowRight,
   Search,
@@ -20,6 +21,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { apiFetch } from '../lib/api'
+import { formatBudget } from '../lib/currency'
 
 interface BackendTripCard {
   id: string
@@ -62,7 +64,7 @@ function StatusBadge({ status }: { status: string }) {
   if (s === 'confirmed' || s === 'completed' || s === 'ready') {
     return (
       <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-bold rounded-full bg-emerald-500/90 text-white backdrop-blur shadow-sm border border-emerald-400/40">
-        <span>âœ“</span><span>Ready</span>
+        <Check className="h-3.5 w-3.5" aria-hidden="true" /><span>Ready</span>
       </span>
     )
   }
@@ -133,18 +135,12 @@ function TravelersBadge({ travelers }: { travelers: BackendTripCard['travelers']
   return (
     <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-900 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200/70">
       <Users className="w-3.5 h-3.5 text-amber-600" />
-      {adults} Adults Â· {children} {children === 1 ? 'Child' : 'Kids'}
+      {adults} Adults {'\u00b7'} {children} {children === 1 ? 'Child' : 'Kids'}
     </span>
   )
 }
 
 // â”€â”€ Budget formatter â€” full currency support â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-function formatBudget(budget: BackendTripCard['budget']): string {
-  if (!budget || budget.amount === null || budget.amount === undefined) return 'Flexible Budget'
-  const symbols: Record<string, string> = { INR: 'â‚¹', USD: '$', EUR: 'â‚¬', JPY: 'Â¥', GBP: 'Â£' }
-  const sym = symbols[budget.currency ?? ''] ?? ((budget.currency ?? '') + ' ')
-  return `${sym}${Number(budget.amount).toLocaleString()}`
-}
 
 // â”€â”€ Creation date fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function formatCreationDate(iso?: string): string {
@@ -173,7 +169,7 @@ const TripCard: React.FC<{
     ? trip.name.trim()
     : trip.destination?.trim()
     ? `Trip to ${trip.destination.trim()}`
-    : `Untitled Trip Â· ${formatCreationDate(trip.created_at)}`
+    : `Untitled Trip \u00b7 ${formatCreationDate(trip.created_at)}`
 
   const destinationDisplay = trip.destination?.trim()
     || trip.name?.replace(/^Trip to /i, '').trim()
