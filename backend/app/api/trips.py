@@ -16,7 +16,7 @@ from app.api.rate_limit import check_user_message_limit, check_user_trip_limit
 from app.collection.runtime import CollectionRuntimeService, TripBusyError
 from app.db.repository import TripRepository
 from app.db.tables import TripRow
-from app.domain.cover_images import resolve_destination_cover_image
+from app.domain.cover_images import destination_cover
 from app.domain.security import contains_sensitive_data
 from app.models.api import AcceptedMessageResponse
 from app.models.enums import TripStatus
@@ -42,6 +42,8 @@ class TripCardSummary(BaseModel):
     name: str
     description: str | None = None
     cover_image_url: str | None = None
+    cover_source_url: str | None = None
+    cover_credit: str | None = None
     dates: str | None = None
     start_date: str | None = None
     end_date: str | None = None
@@ -144,7 +146,7 @@ def register_trip_routes(
         cards: list[TripCardSummary] = []
         for r in rows:
             dest_name = r.destination_items or r.origin_city or "Dream Vacation"
-            cover = r.cover_image_url or resolve_destination_cover_image(dest_name)
+            cover, cover_source, cover_credit = await destination_cover(dest_name, r.cover_image_url)
 
             # Format friendly status
             raw_status = (r.status or "draft").replace("_", " ").title()
@@ -164,6 +166,8 @@ def register_trip_routes(
                     description=r.trip_description
                     or "Personalized AI-designed itinerary.",
                     cover_image_url=cover,
+                    cover_source_url=cover_source,
+                    cover_credit=cover_credit,
                     dates=dates_str,
                     start_date=r.start_date,
                     end_date=r.end_date,

@@ -30,6 +30,8 @@ interface BackendTripCard {
   destination?: string | null
   description?: string | null
   cover_image_url?: string | null
+  cover_source_url?: string | null
+  cover_credit?: string | null
   dates?: string | null
   start_date?: string | null
   end_date?: string | null
@@ -195,6 +197,9 @@ const TripCard: React.FC<{
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-black/30" />
+        {trip.cover_source_url && <a href={trip.cover_source_url} target="_blank" rel="noreferrer"
+          onClick={event => event.stopPropagation()}
+          className="absolute bottom-1 right-2 z-10 max-w-[70%] truncate text-[9px] text-white underline">{trip.cover_credit ? `Photo: ${trip.cover_credit} · ` : ''}Google Maps</a>}
 
         {/* Top badges */}
         <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between">

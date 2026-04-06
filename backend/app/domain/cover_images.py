@@ -2,6 +2,51 @@
 
 from __future__ import annotations
 
+import asyncio
+import os
+from collections import OrderedDict
+from time import monotonic
+
+from app.planning_tools.contracts import Photo, Place, PlaceSearchInput
+from app.planning_tools.places import PlacesTools
+
+_cover_cache: OrderedDict[str, tuple[float, str, str | None, str | None]] = OrderedDict()
+
+
+async def destination_cover(destination: str, saved: str | None) -> tuple[str, str | None, str | None]:
+    """Resolve legacy generic covers without changing saved trip data."""
+    if saved and saved != DEFAULT_TRAVEL_COVER:
+        return saved, None, None
+    key = destination.strip().casefold()
+    cached = _cover_cache.get(key)
+    if cached and cached[0] > monotonic():
+        return cached[1], cached[2], cached[3]
+    fallback = resolve_destination_cover_image(destination)
+    if fallback != DEFAULT_TRAVEL_COVER:
+        return fallback, None, None
+    provider = PlacesTools(os.getenv("GOOGLE_MAPS_API_KEY") or os.getenv("GPLACES_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+    cover, source, credit = fallback, None, None
+    try:
+        async with asyncio.timeout(12):
+            search = await provider.text_search(PlaceSearchInput(query=destination.strip(), max_results=1))
+            if search.data:
+                details = await provider.details(search.data[0].place_id)
+                place = details.data
+                if isinstance(place, Place) and place.photos:
+                    ref = place.photos[0]
+                    photo = await provider.photo(ref.name)
+                    if isinstance(photo.data, Photo) and photo.data.uri:
+                        cover, source = photo.data.uri, place.map_url
+                        credit = ', '.join(a['displayName'] for a in ref.attribution if a.get('displayName'))
+    except Exception:  # noqa: BLE001 - optional image enrichment
+        pass  # A missing cover must not prevent access to saved trips.
+    finally:
+        await provider.close()
+    _cover_cache[key] = (monotonic() + 600, cover, source, credit)
+    while len(_cover_cache) > 128:
+        _cover_cache.popitem(last=False)
+    return cover, source, credit
+
 # High-resolution, curated, optimized CDN destination images (w=800, quality=80)
 _CURATED_DESTINATION_COVERS: dict[str, str] = {
     # Japan
