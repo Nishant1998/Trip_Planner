@@ -125,12 +125,17 @@ def register_planning_routes(router, repository, service):
         catalog = service.catalog_factory()
         try:
             async with asyncio.timeout(60):
-                return await refresh_display(
-                    plan.plan_json,
+                cache = getattr(service, "display_plans", None)
+                cached = cache.get(plan.plan_json.get("plan_id")) if cache is not None else None
+                result = await refresh_display(
+                    cached or plan.plan_json,
                     catalog,
                     place_ids=payload.place_ids,
                     include_photos=payload.include_photos,
                 )
+                if cache is not None:
+                    cache.put(result["plan"])
+                return result
         except ValueError:
             raise HTTPException(
                 422, "Request at most ten place IDs selected in this plan."

@@ -15,12 +15,14 @@ async def refresh_display(plan, catalog, *, place_ids=None, include_photos=False
     if len(requested) > 10 or any(place_id not in selected for place_id in requested):
         raise ValueError("Refresh at most ten selected plan place IDs.")
     lookup, warnings = catalog.agent_tools()["places"], []
+    refreshed = []
     for place_id in requested:
         response = await lookup(PlaceLookupInput(action="details", place_id=place_id))
         place = response.data
         if not isinstance(place, Place):
             warnings.append(f"Details unavailable for {place_id}.")
             continue
+        refreshed.append(place_id)
         display_photos = []
         if include_photos and place.photos:
             ref = place.photos[0]
@@ -37,6 +39,7 @@ async def refresh_display(plan, catalog, *, place_ids=None, include_photos=False
             if event.get("place_id") == place_id:
                 event.update(
                     title=place.name,
+                    reason=(event.get("reason") if event.get("reason") and not event["reason"].startswith("Refresh source details") else f"Planned {event.get('kind', 'activity')} stop at {place.name}."),
                     location=place.location.model_dump() if place.location else None,
                     address=place.address,
                     opening_hours=place.opening_hours,
@@ -56,5 +59,5 @@ async def refresh_display(plan, catalog, *, place_ids=None, include_photos=False
         "plan": result,
         "display_fields_status": "refreshed" if not warnings[:-1] else "partial",
         "warnings": warnings,
-        "refreshed_place_ids": requested,
+        "refreshed_place_ids": refreshed,
     }

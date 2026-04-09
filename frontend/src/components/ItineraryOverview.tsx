@@ -68,7 +68,9 @@ export default function ItineraryOverview({ plan, onReview, onRefresh, refreshin
 
       {plan.displayRefreshRequired && Boolean(plan.placeIds?.length) && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 print:hidden">
-          <p>Saved place names and details need refreshing.</p>
+          <p role="status">{refreshing ? 'Loading place details and photos…' : plan.unresolvedPlaces
+            ? `${plan.unresolvedPlaces} planned stops could not be loaded. The itinerary below is incomplete; retry to restore their details.`
+            : 'Place details and photos are available to refresh.'}</p>
           <button type="button" onClick={onRefresh} disabled={refreshing}
             className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-slate-200 px-3 font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
             <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />

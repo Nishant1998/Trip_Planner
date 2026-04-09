@@ -9,6 +9,7 @@ export interface Activity {
   mapUrl?: string
   imageUrl?: string
   hasPlace?: boolean
+  photoCredits?: string[]
 }
 
 export interface DayPlan {
@@ -34,6 +35,7 @@ export interface NormalizedPlan {
   deliveryStatus?: string
   displayRefreshRequired?: boolean
   placeIds?: string[]
+  unresolvedPlaces?: number
   budgetTargets?: { categories: Record<string, string>; basis: string; nights: number }
   durationDays: number
   travelers: { adults: number; children: number }
@@ -78,6 +80,8 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
     const p = typeof payload === 'string' ? JSON.parse(payload) : payload
     if (p.schema_version === 'trip_plan.v2') {
       const summary = p.trip_summary
+      const unresolved = (event: any) => Boolean(event.place_id) && (!event.title || event.title === 'Selected place (refresh details)')
+      const unresolvedPlaces = p.days.reduce((count: number, day: any) => count + day.events.filter(unresolved).length, 0)
       const currency = summary.currency || p.total_estimated_cost?.currency || ''
       const money = (value: unknown, unit = currency): string =>
         typeof value === 'number' && Number.isFinite(value)
@@ -91,7 +95,7 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
         summary: day.summary || undefined,
         workload: day.workload ? `${day.workload.visit_minutes ?? '?'} min of visits · ${day.workload.poi_capacity_minutes ?? '?'} min visit allowance · ${day.workload.status === 'within_allowance' ? 'Within planning allowance, not verified travel time' : (day.workload.status || 'unknown').replace(/_/g, ' ')}` : undefined,
         weatherSummary: day.weather?.summary,
-        activities: day.events.map((event: any) => {
+        activities: day.events.filter((event: any) => !unresolved(event)).map((event: any) => {
           const clock = typeof event.start === 'string' ? event.start.match(/T(\d{2}:\d{2})/)?.[1] : undefined
           return {
             time: clock ? `${clock}${event.timing_status === 'provisional' ? ' (provisional)' : ''}`
@@ -107,7 +111,8 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
             driveTime: Number.isFinite(event.travel_from_previous?.duration_s)
               ? `${Math.ceil(event.travel_from_previous.duration_s / 60)} min travel` : undefined,
             mapUrl: event.map_url || undefined,
-            imageUrl: event.display_photos?.[0]?.url || undefined,
+            imageUrl: event.display_photos?.[0]?.uri || event.display_photos?.[0]?.url || undefined,
+            photoCredits: (event.display_photos?.[0]?.attribution || []).map((author: any) => author.displayName).filter(Boolean),
           }
         }),
       }))
@@ -115,7 +120,8 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
       return {
         destination: summary.requested_destinations.join(' → ') || summary.title,
         deliveryStatus: p.delivery_status || (p.status === 'partial' ? 'DRAFT_NEEDS_CONFIRMATION' : undefined),
-        displayRefreshRequired: response.display_fields_status === 'refresh_required',
+        displayRefreshRequired: response.display_fields_status === 'refresh_required' || unresolvedPlaces > 0,
+        unresolvedPlaces,
         placeIds: [...new Set<string>(p.days.flatMap((day: any) => day.events.map((event: any) => event.place_id).filter(Boolean)))],
         budgetTargets: p.budget_guidance ? {
           categories: Object.fromEntries(Object.entries(p.budget_guidance.category_limits).map(([key, value]) => [key, money(value, p.budget_guidance.currency)])),
@@ -128,12 +134,12 @@ export const parseBackendPlan = (raw: any): NormalizedPlan | null => {
         currency,
         summary: summary.overview || summary.title,
         days,
-        stays: (p.accommodation || []).map((record: any) => ({
+        stays: (p.accommodation || []).filter((record: any) => record.selected?.name).map((record: any) => ({
           name: record.selected?.name || p.destinations.find((destination: any) => destination.id === record.stay_request.destination_id)?.label || 'Accommodation to confirm',
           type: record.reason || 'Accommodation to confirm',
           pricePerNight: record.selected?.price_basis === 'per_night'
             ? money(record.selected.price, record.selected.currency || currency) : 'Nightly price to confirm',
-          image: placeholderCover(record.stay_request.destination_id),
+          image: record.selected?.image_url || '',
         })),
         localTips: (p.local_tips || []).filter((tip: unknown): tip is string => typeof tip === 'string' && tip.trim().length > 0),
         packingList: (p.packing_list || []).filter((item: unknown): item is string => typeof item === 'string' && item.trim().length > 0),

@@ -29,7 +29,8 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { apiFetch, readApiError } from '../lib/api'
 import { getWelcomeMessage } from '../lib/welcome'
-import { parseBackendPlan, placeholderCover, type NormalizedPlan } from '../lib/plan'
+import { parseBackendPlan, type NormalizedPlan } from '../lib/plan'
+import PlaceImage from '../components/PlaceImage'
 import { getPlanningState, mergePlanningProgress, shouldPollTrip, type PlanningJob } from '../lib/planning-status'
 import { applyChatStream, mergeChatMessages, type ChatMessage as Message } from '../lib/chat-messages'
 import ItineraryOverview from '../components/ItineraryOverview'
@@ -278,7 +279,28 @@ const CreateTrip: React.FC = () => {
         queryFn: async (): Promise<NormalizedPlan | null> => {
           const res = await apiFetch(`/api/trips/${tripId}/plan`, { headers: headers() })
           if (!res.ok) return null
-          const data = await res.json()
+          let data = await res.json()
+          const saved = parseBackendPlan(data)
+          if (saved?.displayRefreshRequired && saved.placeIds?.length) {
+            if (previousTripIdRef.current === tripId) setPlan(saved)
+            setRefreshingDisplay(true)
+            setDisplayError(null)
+            try {
+              for (let offset = 0; offset < saved.placeIds.length; offset += 10) {
+                const refreshed = await apiFetch(`/api/trips/${tripId}/plan/display`, {
+                  method: 'POST', headers: headers(true),
+                  body: JSON.stringify({ place_ids: saved.placeIds.slice(offset, offset + 10), include_photos: true }),
+                  signal: AbortSignal.timeout(65_000),
+                })
+                if (!refreshed.ok) throw new Error('Some place details could not be loaded. Please retry.')
+                data = await refreshed.json()
+              }
+            } catch (error) {
+              if (previousTripIdRef.current === tripId) setDisplayError(error instanceof Error ? error.message : 'Place details could not be loaded.')
+            } finally {
+              if (previousTripIdRef.current === tripId) setRefreshingDisplay(false)
+            }
+          }
           return parseBackendPlan(data)
         },
       })
@@ -293,14 +315,17 @@ const CreateTrip: React.FC = () => {
     setRefreshingDisplay(true)
     setDisplayError(null)
     try {
-      const response = await apiFetch(`/api/trips/${tripId}/plan/display`, {
-        method: 'POST', headers: headers(true),
-        body: JSON.stringify({ place_ids: plan?.placeIds?.slice(0, 10), include_photos: false }),
-      })
-      if (!response.ok) throw new Error('Place details could not be refreshed. The saved itinerary is unchanged.')
-      const nextPlan = parseBackendPlan(await response.json())
-      if (!nextPlan) throw new Error('The refreshed plan could not be displayed.')
-      if (previousTripIdRef.current === tripId) {
+      const ids = plan?.placeIds || []
+      for (let offset = 0; offset < ids.length; offset += 10) {
+        const response = await apiFetch(`/api/trips/${tripId}/plan/display`, {
+          method: 'POST', headers: headers(true),
+          body: JSON.stringify({ place_ids: ids.slice(offset, offset + 10), include_photos: true }),
+          signal: AbortSignal.timeout(65_000),
+        })
+        if (!response.ok) throw new Error('Place details could not be refreshed. The saved itinerary is unchanged.')
+        const nextPlan = parseBackendPlan(await response.json())
+        if (!nextPlan) throw new Error('The refreshed plan could not be displayed.')
+        if (previousTripIdRef.current !== tripId) return
         setPlan(nextPlan)
         queryClient.setQueryData(planQueryKey, nextPlan)
       }
@@ -1281,11 +1306,8 @@ const CreateTrip: React.FC = () => {
                               )}
 
                               <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs hover:border-indigo-200 transition flex gap-3.5 items-start print:border-slate-300">
-                                {act.hasPlace !== false && <img
-                                  src={act.imageUrl || placeholderCover(act.title)}
-                                  alt={act.imageUrl ? act.title : ''}
-                                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover shrink-0 border border-slate-100 shadow-2xs"
-                                />}
+                                {act.hasPlace !== false && <PlaceImage src={act.imageUrl} name={act.title}
+                                  className="w-16 h-16 sm:w-20 sm:h-20" />}
 
                                 <div className="flex-1 min-w-0">
                                   <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -1305,6 +1327,9 @@ const CreateTrip: React.FC = () => {
                                   <p className="text-xs text-slate-600 leading-relaxed mb-2">
                                     {act.description}
                                   </p>
+                                  {act.imageUrl && Boolean(act.photoCredits?.length) && <p className="mb-2 text-[10px] leading-relaxed text-slate-500">
+                                    Photo: {act.photoCredits?.join(', ')} · Google Maps
+                                  </p>}
 
                                   <div className="flex items-center justify-between pt-1 border-t border-slate-50 text-xs print:hidden">
                                     <span className="text-[11px] text-slate-400 font-medium">
@@ -1415,17 +1440,14 @@ const CreateTrip: React.FC = () => {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {plan.stays.length === 0 && <p className="text-sm text-slate-600">No hotel has been selected for this itinerary yet. Check the review notes before choosing a stay.</p>}
                       {plan.stays.map((stay, idx) => (
                         <div
                           key={idx}
                           className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:border-indigo-300 transition group print:border-slate-300 print:break-inside-avoid"
                         >
                           <div className="relative h-40 overflow-hidden">
-                            <img
-                              src={stay.image}
-                              alt={stay.name}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
+                            <PlaceImage src={stay.image} name={stay.name} className="h-full w-full" />
                             <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md text-white font-bold text-[10px]">
                               Stay Recommendation
                             </span>
