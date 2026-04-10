@@ -35,6 +35,12 @@ Rules:
 - Only fill fields from the allowed subset in the task prompt.
 - Only fill a field when the profile clearly and repeatedly supports it.
 - If a preference is conditional on destination, season, or trip type, do not fill the field. Put it in trip_notes instead.
+- Read the profile as free text; category headings are not required. Preserve a
+  useful preference that does not fit an allowed field as a short trip_notes item.
+  Keep its conditions and uncertainty, and prefix it with "Profile context:".
+  Include only context relevant to travel; do not copy the full profile.
+- A "confirm before assuming" note is a question to resolve, not a confirmed
+  requirement. Never turn historical companions, dates or budgets into this trip's facts.
 - If the profile contains conflicting evidence for a field, omit that field entirely.
 - If the profile is empty or insufficient, return empty prefilled_fields.
 - Values must exactly match the field type and allowed options listed. No other values are allowed for enum fields.

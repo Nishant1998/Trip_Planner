@@ -38,6 +38,10 @@ OUTPUT
   [source=explicit, confidence=medium, last_seen=YYYY-MM]
   [source=observed, confidence=medium, last_seen=YYYY-MM, evidence=N trips]
 - Never label one-trip behavior as observed evidence across multiple trips.
+- Labels are flexible, not a fixed category schema. Use a specific label for
+  each distinct preference and preserve conditions in its text. For an update,
+  reuse its existing label; if that label covers several facts, the replacement
+  must preserve every unaffected fact under that label.
 - Remove legacy [Updated] prefixes. No markdown.
 """.strip()
 COMPRESSION_SYSTEM_PROMPT = """
@@ -72,8 +76,12 @@ WHAT TO EXCLUDE
 FORMAT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Write as brief category lines WITHOUT evidence tags (those stay in full profile only).
+Write a short natural-language summary WITHOUT evidence tags (those stay in the
+full profile only). Category headings are optional; never force unusual preferences
+into a fixed list of categories. Preserve relevant conditions, exceptions and
+"confirm before assuming" notes. Do not invent a preference to fill a category.
 Target: 150–350 words. Hard limit: 500 words.
+Use fewer words for a sparse profile; never pad it or add unsupported facts.
 
 Example output style:
   Food: Vegetarian. Prefers local food over hotel restaurants.
@@ -83,7 +91,7 @@ Example output style:
   Companions: Often travels as a couple. Sometimes with elderly parents.
   Confirm before assuming: Hotel tier (varies by trip type). Budget level (varies).
 
-The "Confirm before assuming" line is for facts where the profile shows variation —
+The "Confirm before assuming" note is for facts where the profile shows variation —
 tell Riya to verify rather than assume.
 
 Return valid JSON only.

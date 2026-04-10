@@ -28,8 +28,14 @@ def request_from_confirmed_memory(
     snapshot = json.dumps(
         memory.to_canonical_dict(), sort_keys=True, separators=(",", ":")
     )
+    preferences = OptionalFieldValues.model_validate(memory.optional.to_value_dict())
+    notes = list(dict.fromkeys([
+        *(preferences.trip_notes or []),
+        *memory.internal.trip_context_notes,
+    ]))
+    preferences.trip_notes = notes or None
     return TripRequest(
-        preferences=OptionalFieldValues.model_validate(memory.optional.to_value_dict()),
+        preferences=preferences,
         preference_sources={
             name: (record.source.value if record.source else None)
             for name in memory.optional.variable_names()
