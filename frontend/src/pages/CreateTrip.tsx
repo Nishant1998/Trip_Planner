@@ -163,7 +163,13 @@ const CreateTrip: React.FC = () => {
 
   const chatEndRef = useRef<HTMLDivElement>(null)
   const followChatRef = useRef(true)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    const composer = inputRef.current
+    if (!composer) return
+    composer.style.height = 'auto'
+    composer.style.height = `${Math.min(composer.scrollHeight + 2, 160)}px`
+  }, [input])
   const activeStreamMessageIdRef = useRef<string | null>(null)
   const historyRequestRef = useRef(0)
   const collectionPendingRef = useRef(false)
@@ -1082,14 +1088,20 @@ const CreateTrip: React.FC = () => {
                   e.preventDefault()
                   handleSendMessage()
                 }}
-                className="flex items-center gap-2"
+                className="flex items-end gap-2"
               >
-                <input
+                <textarea
                   ref={inputRef}
-                  type="text"
+                  rows={1}
                   aria-label="Trip requirements message"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
+                      e.preventDefault()
+                      if (input.trim() && !busy && !isComposerLocked) e.currentTarget.form?.requestSubmit()
+                    }
+                  }}
                   placeholder={
                     !isAuthenticated
                       ? 'Type your trip request (Sign-in required to plan)...'
@@ -1098,7 +1110,7 @@ const CreateTrip: React.FC = () => {
                       : 'Describe what you want for this trip...'
                   }
                   disabled={isComposerLocked}
-                  className="flex-1 min-w-0 rounded-xl border border-slate-300 px-4 py-2.5 text-xs sm:text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:bg-slate-50"
+                  className="flex-1 min-w-0 min-h-11 max-h-40 resize-none overflow-y-auto rounded-xl border border-slate-300 px-4 py-2.5 text-xs sm:text-sm text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:bg-slate-50"
                 />
                 <button
                   type="submit"
