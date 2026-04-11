@@ -17,10 +17,18 @@ def is_local_city_trip(memory: TripMemory) -> bool:
 
     destination = memory.needed.destination
     origin = memory.needed.origin
-    return bool(
-        origin and destination and destination.type in (DestType.CITY, DestType.CITIES)
-        and len(destination.items) == 1
-        and origin.strip().casefold() == destination.items[0].strip().casefold()
+    if (
+        not origin or not destination
+        or destination.type not in (DestType.CITY, DestType.CITIES)
+        or len(destination.items) != 1
+    ):
+        return False
+    start = [part.strip().casefold() for part in origin.split(',')]
+    finish = [part.strip().casefold() for part in destination.items[0].split(',')]
+    # A city-only label inherits its qualifier from the same trip's full label.
+    # Keep explicitly different qualifiers distinct (Paris, France / Paris, Texas).
+    return start == finish or (
+        start[0] == finish[0] and (len(start) == 1 or len(finish) == 1)
     )
 
 

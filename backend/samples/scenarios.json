@@ -1,0 +1,32 @@
+[
+  {
+    "id": "jaipur-heritage",
+    "title": "A relaxed Jaipur heritage weekend",
+    "features": ["local transport", "vegetarian meals", "must-see places", "budget correction"],
+    "opening": "Origin city: Jaipur, India. Plan a relaxed two-day Jaipur trip for two adults on 14–15 November 2026. Start at Raj Mandir Cinema near MI Road at 9 am on the 14th, and finish in Jaipur after 7 pm on the 15th. No flights or intercity travel. Our total budget is INR 18,000 including one hotel night, meals, local transport and tickets. We like history and architecture; Amber Fort and City Palace are must-sees. Ask any missing details, then show a summary for approval before planning.",
+    "preferences": "Use app-based taxis for long journeys and short walks nearby. We eat vegetarian food, have no allergies, and want a clean mid-range hotel near central Jaipur. Keep lunch and rest breaks, group nearby sights, and avoid long walks. Finish in Jaipur. Show the summary before planning.",
+    "correction": "Increase our total budget to INR 20,000. Keep all other details unchanged and show the updated summary before planning.",
+    "final_brief": "Origin city: Jaipur, India. Destination city: Jaipur, India. Start and finish at Raj Mandir Cinema, Jaipur, near MI Road. Dates 14–15 November 2026, two adults, no children or seniors. INR 20,000 total for one mid-range hotel night, vegetarian meals, local taxis and attraction tickets. Start sightseeing at 9 am, finish the trip after 7 pm on the 15th. Relaxed history and architecture trip, Amber Fort and City Palace required, short walks, lunch and rest breaks. No flights or intercity transport, no allergies. Show the final summary; do not plan until I confirm.",
+    "expected": {"days": 2, "start_date": "2026-11-14", "end_date": "2026-11-15", "currency": "INR", "budget": 20000, "adults": 2, "children": 0}
+  },
+  {
+    "id": "lonavala-family",
+    "title": "A family road trip to Lonavala",
+    "features": ["self-drive route", "child preferences", "return deadline", "rest breaks"],
+    "opening": "Plan a relaxed family road trip from Kharghar, Navi Mumbai to Lonavala on 14–15 November 2026. We are two adults and one child aged eight. Leave home at 8 am on the 14th and be home by 8 pm on the 15th. Budget INR 22,000 total for one hotel night, travel, meals and activities. We enjoy gardens and scenic viewpoints; Ryewood Park and Tiger Point are our must-sees. Please collect missing details and show a summary before planning.",
+    "preferences": "We will use our own car throughout; include fuel, tolls and parking. Vegetarian meals, no allergies. A clean mid-range family hotel in Lonavala, relaxed pace, lunch breaks and afternoon rest. Avoid strenuous treks, steep climbs and late-night driving. Finish back in Kharghar. Show the trip summary before planning.",
+    "correction": "Set the total budget to INR 25,000 and keep the child-friendly pace and the 8 pm return deadline. Show the updated summary before starting.",
+    "final_brief": "Kharghar, Navi Mumbai to Lonavala and back, 14–15 November 2026, two adults and one eight-year-old child, no seniors. Own car, INR 25,000 total including fuel, tolls, parking, one mid-range family hotel night, vegetarian meals and activities. Depart 8 am on the 14th; home by 8 pm on the 15th. Relaxed gardens and viewpoints, Ryewood Park and Tiger Point required. Lunch and rest breaks, no strenuous treks or steep climbs, no allergies. Show the final summary and wait for approval.",
+    "expected": {"days": 2, "start_date": "2026-11-14", "end_date": "2026-11-15", "currency": "INR", "budget": 25000, "adults": 2, "children": 1}
+  },
+  {
+    "id": "paris-culture",
+    "title": "Three days of art and culture in Paris",
+    "features": ["international destination", "EUR budget", "museum scheduling", "public transport"],
+    "opening": "Origin city: Paris, France. Plan a relaxed three-day Paris trip for two adults on 16–18 November 2026. Start at Place Saint-Michel in central Paris at 9 am on the 16th and finish in Paris after 7 pm on the 18th. No flights or travel to Paris. Budget EUR 1,000 total for two hotel nights, meals, tickets and local transport. We enjoy art, architecture and neighbourhood walks. The Louvre and Eiffel Tower are must-sees. Ask for missing preferences and show the summary before planning.",
+    "preferences": "Use the metro where practical, short neighbourhood walks and taxis only if needed. Vegetarian meals and no allergies. A clean mid-range hotel in central Paris. Keep lunch and rest breaks and avoid rushing or long walks. Finish in central Paris. Place museum visits on suitable opening days, and label any booking or opening-hour detail that needs confirmation. Show the summary before planning.",
+    "correction": "Increase the total budget to EUR 1,100, keeping everything else unchanged. Show the updated summary before planning.",
+    "final_brief": "Origin city: Paris, France. Destination city: Paris, France. Start and finish at Place Saint-Michel in central Paris, 16–18 November 2026, two adults, no children or seniors. EUR 1,100 total for two mid-range hotel nights, vegetarian meals, tickets and local transport. Available 9 am on the 16th until after 7 pm on the 18th. Relaxed art and architecture trip, Louvre and Eiffel Tower required. Metro, short walks and occasional taxis; lunch and rest breaks. No flights, intercity travel or allergies. Check museum opening days. Show the final summary and wait for confirmation.",
+    "expected": {"days": 3, "start_date": "2026-11-16", "end_date": "2026-11-18", "currency": "EUR", "budget": 1100, "adults": 2, "children": 0}
+  }
+]

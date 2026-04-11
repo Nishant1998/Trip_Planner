@@ -1454,6 +1454,12 @@ class TripOrchestrator:
 
         re_infer_derived_fields(memory)
 
+        if is_local_city_trip(memory):
+            failure_payload = [
+                issue for issue in failure_payload
+                if issue.get('field_name') != 'long_distance_modes'
+            ]
+
         return changed_fields, failure_payload
 
     @staticmethod

@@ -53,6 +53,7 @@ dev_runs/
 /backend/app/runtime/logs/
 output/
 test_outputs/
+backend/samples/generated/
 tmp/
 backups/
 *.zip
