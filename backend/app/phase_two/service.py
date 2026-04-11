@@ -5,12 +5,14 @@ import hashlib
 import json
 import logging
 import os
+from fastapi import HTTPException
 
 from app.models.state import load_runtime_memory
 from app.planning_tools.catalog import PlanningToolCatalog
 from app.providers.tool_loop import OpenAIResponsesToolModel
 from app.services.progress import ProgressReporter
 from app.models.progress import PlanningStage
+from app.services.demo_usage import refund_unstarted_plan
 
 from .agents import AGENT_TEMPLATES
 from .graph import GraphHandlers, build_graph, initial_state
@@ -89,6 +91,12 @@ class PlanningService:
             return {"status": "disabled"}
         try:
             return await self.start(trip_id)
+        except HTTPException as exc:
+            await self.event_bus.publish(trip_id, 'error_event', {'message': exc.detail})
+            await self.event_bus.publish(trip_id, 'planning_status', {
+                'status': 'failed', 'code': 'planning_start_failed', 'message': exc.detail,
+            })
+            return {'status': 'failed', 'message': exc.detail}
         except Exception:  # noqa: BLE001 - isolate planning failure from successful Phase 1 confirmation
             logger.exception("Planning admission failed", extra={"trip_id": trip_id})
             # Collection confirmation remains successful even if planning admission fails.
@@ -134,10 +142,12 @@ class PlanningService:
 
     async def _run(self, job, request):
         catalog = model = None
+        providers_ready = False
         async with self.semaphore:
             try:
                 await self.store.update(job["id"], "running", "Starting", 0)
                 catalog, model = self.catalog_factory(), self.model_factory()
+                providers_ready = True
                 journal = CollectionJournal(self.store, request.snapshot_id)
                 if catalog.bright_data:
                     catalog.bright_data.journal = journal
@@ -234,6 +244,13 @@ class PlanningService:
                 )
                 raise
             except Exception:  # noqa: BLE001 - background job boundary, expose safe failure code
+                if not providers_ready and isinstance(self.store, PlanningStore):
+                    try:
+                        await asyncio.to_thread(
+                            refund_unstarted_plan, self.repository, request.trip_id, job['id'],
+                        )
+                    except Exception:
+                        logger.exception('Could not refund unstarted planning run', extra={'run_id': job['id']})
                 logger.exception("Planning failed", extra={"trip_id": request.trip_id, "run_id": job["id"]})
                 await self.store.update(
                     job["id"],

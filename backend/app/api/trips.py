@@ -12,7 +12,6 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.api.auth import AuthenticatedUser, current_user, require_trip_owner
-from app.api.rate_limit import check_user_message_limit, check_user_trip_limit
 from app.collection.runtime import CollectionRuntimeService, TripBusyError
 from app.db.repository import TripRepository
 from app.db.tables import TripRow
@@ -199,9 +198,6 @@ def register_trip_routes(
         """Lazy trip creation: starts trip on first message with 12-char hex slug."""
         text = validate_user_message(_extract_text(payload))
 
-        # Enforce rate limit (admin bypass)
-        check_user_trip_limit(repository, user.id, user.email, user.role)
-
         trip = repository.create_trip(user.id)
         welcome_message = (
             payload.welcome_message.strip()
@@ -333,9 +329,6 @@ def register_trip_routes(
             require_trip_by_slug_or_id(repository, slug_or_id), user
         )
         text = validate_user_message(_extract_text(payload))
-
-        # Enforce rate limit (admin bypass)
-        check_user_message_limit(user.id, user.email, user.role)
 
         if payload.client_message_id and repository.get_message_by_client_message_id(
             trip.id, payload.client_message_id

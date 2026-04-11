@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from app.domain.cover_images import resolve_destination_cover_image
+from app.services.demo_usage import charge_account, lock_account
 
 import psycopg
 from psycopg import sql
@@ -588,6 +589,17 @@ class PostgresTripRepository(TripRepository):
         now = utc_now()
         meta_payload = meta or {}
         with self._write_lock, self._connect() as conn:
+            if role == 'user' and sender_id is not None:
+                account = lock_account(conn, sender_id)
+                client_id = meta_payload.get('client_message_id')
+                if client_id:
+                    existing = conn.execute(
+                        "SELECT * FROM messages WHERE trip_id=%s AND meta->>'client_message_id'=%s",
+                        (trip_id, client_id),
+                    ).fetchone()
+                    if existing:
+                        return self._message_row_to_model(existing)
+                charge_account(conn, account, 'chat')
             row = conn.execute(
                 """
                 INSERT INTO messages (trip_id, sender_id, role, content, meta, created_at)

@@ -8,9 +8,18 @@ from pydantic import BaseModel, ConfigDict
 
 from app.api.auth import AuthenticatedUser, current_user
 from app.db.repository import TripRepository
+from app.services.demo_usage import usage_summary
 
 
 router = APIRouter(prefix="/api/users", tags=["users"])
+
+
+@router.get('/usage')
+def get_usage(request: Request, user: AuthenticatedUser = Depends(current_user)):
+    account = request.app.state.repository.get_user(user.id)
+    if account is None:
+        raise HTTPException(404, 'Account not found')
+    return usage_summary(account.preferences, account.role)
 
 
 class UserProfileResponse(BaseModel):

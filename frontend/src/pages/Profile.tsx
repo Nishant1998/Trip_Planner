@@ -10,6 +10,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { useAuth, UserProfile } from '../context/AuthContext'
+import DemoUsageCard from '../components/DemoUsageCard'
 
 const RESERVED_USERNAMES = new Set([
   'admin',
@@ -507,6 +508,7 @@ const Profile: React.FC = () => {
           )}
         </div>
       </div>
+      <DemoUsageCard key={data.id} />
     </div>
   )
 }

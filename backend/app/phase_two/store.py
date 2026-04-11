@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from psycopg.types.json import Json
 
 from .persistence import durable_plan
+from app.services.demo_usage import lock_account, reserve_planning
 
 
 def completed_job_status(row):
@@ -43,6 +44,10 @@ class PlanningStore:
 
     def _create_job(self, trip_id, snapshot_id, retry):
         with self.repository._connect() as conn:
+            trip = conn.execute('SELECT owner_id FROM trips WHERE id=%s', (trip_id,)).fetchone()
+            if not trip:
+                raise ValueError('Trip not found')
+            account = lock_account(conn, trip['owner_id'])
             conn.execute("SELECT id FROM trips WHERE id=%s FOR UPDATE", (trip_id,))
             current = conn.execute(
                 "SELECT id FROM confirmed_trip_snapshots WHERE trip_id=%s AND is_current=TRUE",
@@ -68,6 +73,7 @@ class PlanningStore:
                 elif not retry:
                     return completed_job_status(prior), False
             run_id = str(uuid.uuid4())
+            reserve_planning(conn, account, trip_id, run_id)
             row = conn.execute(
                 "INSERT INTO planning_jobs (id,trip_id,snapshot_id,status) VALUES (%s,%s,%s,'queued') RETURNING *",
                 (run_id, trip_id, snapshot_id),

@@ -547,7 +547,7 @@ const CreateTrip: React.FC = () => {
                   setBusy(false)
                   setThinkingStep(null)
                   setJob({ status: 'failed', progress_percent: 0,
-                    failure: { code: payload.code ?? 'planning_start_failed' } })
+                    failure: { code: payload.code ?? 'planning_start_failed', message: payload.message } })
                 }
               }
               if (name === 'planning_progress') {
@@ -840,11 +840,11 @@ const CreateTrip: React.FC = () => {
   )
   const showPlanningCanvas = isPlanning
   const isComposerLocked = hasPlanningStarted
-  const planningFailureMessage = job?.failure?.code === 'storage_failed'
+  const planningFailureMessage = job?.failure?.message || (job?.failure?.code === 'storage_failed'
     ? 'The itinerary was generated, but saving failed. Please retry planning.'
     : job?.status === 'interrupted'
       ? 'Planning was interrupted. Please retry to continue.'
-      : 'We could not finish this itinerary. You can retry planning.'
+      : 'We could not finish this itinerary. You can retry planning.')
   const planningActivity = PLANNING_STEPS.find(step => step.id === job?.current_stage) ?? PLANNING_STEPS[0]
 
   useEffect(() => {

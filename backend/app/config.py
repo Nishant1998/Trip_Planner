@@ -71,10 +71,10 @@ def get_admin_emails() -> set[str]:
 
 
 RATE_LIMIT_TRIPS_PER_MONTH = _env_nonnegative_int("RATE_LIMIT_TRIPS_PER_MONTH", 3)
-# Set to 0 to disable chat-message throttling. Trip creation still has its
-# separate daily protection, and assistant/status traffic is never counted.
+# Zero disables an allowance. Account exemptions are stored in the database.
+RATE_LIMIT_MESSAGES_PER_DAY = _env_nonnegative_int('RATE_LIMIT_MESSAGES_PER_DAY', 30)
 RATE_LIMIT_MESSAGES_PER_MINUTE = _env_nonnegative_int(
-    "RATE_LIMIT_MESSAGES_PER_MINUTE", 0
+    "RATE_LIMIT_MESSAGES_PER_MINUTE", 5
 )
 RATE_LIMIT_IP_REQUESTS_PER_MINUTE = _env_int("RATE_LIMIT_IP_REQUESTS_PER_MINUTE", 30)
 
