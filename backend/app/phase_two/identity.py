@@ -29,7 +29,7 @@ def city_points(entries, labels):
         values = response.data if isinstance(response.data, list) else [response.data]
         for place in values:
             if (not isinstance(place, Place) or not place.location
-                    or not set(place.types).intersection({"locality", "postal_town", "administrative_area_level_3"})):
+                    or not set(place.types).intersection({"locality", "postal_town", "administrative_area_level_3", "sublocality", "sublocality_level_1", "neighborhood"})):
                 continue
             label = resolve_label(place.name, labels)
             if not label:
@@ -49,13 +49,20 @@ def city_points(entries, labels):
 JAIPUR_AMBER_NAMES = {words(name) for name in
                       ("Amber Fort", "Amer Fort", "Amber Palace", "Amer Palace")}
 
+# The Lonavala park is listed by Maharashtra Tourism and returned by Places as a garden.
+# https://maharashtratourism.gov.in/nature/lonavala/
+LONAVALA_RYEWOOD_NAMES = {words(name) for name in ('Ryewood Park', 'Ryewood Garden')}
+
 
 def matches_required_place(required, name, destination):
     wanted, supplied = words(required), words(name)
+    if wanted[:1] == ('the',):
+        wanted = wanted[1:]
     if not wanted:
         return False
     if any(supplied[n:n + len(wanted)] == wanted
            for n in range(len(supplied) - len(wanted) + 1)):
         return True
-    return (words(destination.split(",")[0]) == ("jaipur",)
-            and wanted in JAIPUR_AMBER_NAMES and supplied in JAIPUR_AMBER_NAMES)
+    city = words(destination.split(',')[0])
+    return ((city == ("jaipur",) and wanted in JAIPUR_AMBER_NAMES and supplied in JAIPUR_AMBER_NAMES)
+            or (city == ('lonavala',) and wanted in LONAVALA_RYEWOOD_NAMES and supplied in LONAVALA_RYEWOOD_NAMES))

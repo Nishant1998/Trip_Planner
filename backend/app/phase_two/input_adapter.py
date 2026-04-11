@@ -8,6 +8,7 @@ from app.models.enums import TripStatus
 from app.models.memory import OptionalFieldValues, TripMemory
 
 from .contracts import TripRequest
+from .identity import resolve_label
 
 
 def request_from_confirmed_memory(
@@ -29,6 +30,10 @@ def request_from_confirmed_memory(
         memory.to_canonical_dict(), sort_keys=True, separators=(",", ":")
     )
     preferences = OptionalFieldValues.model_validate(memory.optional.to_value_dict())
+    if preferences.end_location:
+        preferences.end_location = resolve_label(
+            preferences.end_location, list(dict.fromkeys([needed.origin, *needed.destination.items]))
+        ) or preferences.end_location
     notes = list(dict.fromkeys([
         *(preferences.trip_notes or []),
         *memory.internal.trip_context_notes,
