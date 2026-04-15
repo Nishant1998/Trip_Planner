@@ -1,0 +1,435 @@
+[
+  {
+    "id": "jaipur-heritage",
+    "destination": "Jaipur",
+    "cover": "/samples/jaipur.svg",
+    "overview": "Two easy-paced days around Jaipur’s forts and palace quarter, with vegetarian meals, taxi journeys and proper rest breaks. Amber Fort and City Palace remain the anchors; the optional stops have been reduced to keep the second day comfortable.",
+    "transport": "Use app-based taxis for longer journeys and short walks within the palace quarter. Start near Raj Mandir Cinema at 9 am on 14 November, and remain in Jaipur until after 7 pm on 15 November. Check taxi availability and live journey times before leaving.",
+    "stay": "One night in a clean mid-range hotel in central Jaipur. No property or room availability is confirmed; choose a hotel and check luggage storage before travelling.",
+    "notes": [
+      "The ₹20,000 budget is for both adults and includes one hotel night, meals, taxis and tickets. It is a requested budget, not a confirmed quotation.",
+      "Visit durations and morning/afternoon slots are planning allowances. Confirm attraction hours and tickets for the actual dates.",
+      "Jaipur day two has been simplified: Jantar Mantar is optional, and the additional Hawa Mahal visit has been removed from the main schedule."
+    ],
+    "sources": [
+      {
+        "label": "Jaipur visitor information",
+        "url": "https://www.tourism.rajasthan.gov.in/jaipur.html"
+      }
+    ],
+    "days": [
+      {
+        "day": 1,
+        "date": "2026-11-14",
+        "title": "Amber Fort, with room to relax",
+        "stops": [
+          {
+            "period": "Morning",
+            "title": "Start in central Jaipur",
+            "description": "Meet near Raj Mandir Cinema at 9 am and take a taxi towards Amber Fort. This is a meeting point, not a cinema visit."
+          },
+          {
+            "period": "Late morning",
+            "title": "Amber Fort / Amber Palace",
+            "description": "Make the fort the main visit of the day. Allow time to enjoy the architecture and take breaks rather than adding another major attraction.",
+            "allowance": "About 2–3 hours"
+          },
+          {
+            "period": "Lunch",
+            "title": "Vegetarian lunch",
+            "description": "Choose a vegetarian restaurant after the fort visit; check the menu and current opening hours."
+          },
+          {
+            "period": "Afternoon",
+            "title": "Hotel check-in and rest",
+            "description": "Return towards central Jaipur, check in if the room is ready, and keep the afternoon for rest."
+          },
+          {
+            "period": "Evening",
+            "title": "An easy dinner",
+            "description": "Stay close to the hotel for a relaxed vegetarian dinner. No additional sightseeing is required."
+          }
+        ]
+      },
+      {
+        "day": 2,
+        "date": "2026-11-15",
+        "title": "City Palace and a gentle finish",
+        "stops": [
+          {
+            "period": "Morning",
+            "title": "Check out and arrange luggage storage",
+            "description": "Confirm that the hotel can hold your bags before heading to the palace quarter."
+          },
+          {
+            "period": "Late morning",
+            "title": "City Palace",
+            "description": "Give this must-see a comfortable visit window. Keep the focus on history and architecture, with seated breaks when needed.",
+            "allowance": "About 2 hours"
+          },
+          {
+            "period": "Lunch",
+            "title": "Vegetarian lunch and rest",
+            "description": "Take a proper lunch break near the old city rather than rushing straight into another attraction."
+          },
+          {
+            "period": "Optional afternoon",
+            "title": "Jantar Mantar, only if you feel fresh",
+            "description": "This nearby stop is optional. Skip it if queues, heat or fatigue would make the day feel busy.",
+            "optional": true
+          },
+          {
+            "period": "Late afternoon / evening",
+            "title": "Collect bags and finish in Jaipur",
+            "description": "Keep the remaining time free for rest, dinner and your onward arrangements after 7 pm. Confirm your actual departure separately."
+          }
+        ]
+      }
+    ],
+    "title": "A relaxed Jaipur heritage weekend",
+    "features": [
+      "local transport",
+      "vegetarian meals",
+      "must-see places",
+      "budget correction"
+    ],
+    "requirements": {
+      "days": 2,
+      "start_date": "2026-11-14",
+      "end_date": "2026-11-15",
+      "currency": "INR",
+      "budget": 20000,
+      "adults": 2,
+      "children": 0
+    },
+    "status": "draft",
+    "provenance": "Generated with Riya, then reviewed and simplified for this demo.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Origin city: Jaipur, India. Plan a relaxed two-day Jaipur trip for two adults on 14–15 November 2026. Start at Raj Mandir Cinema near MI Road at 9 am on the 14th, and finish in Jaipur after 7 pm on the 15th. No flights or intercity travel. Our total budget is INR 18,000 including one hotel night, meals, local transport and tickets. We like history and architecture; Amber Fort and City Palace are must-sees. Ask any missing details, then show a summary for approval before planning."
+      },
+      {
+        "role": "assistant",
+        "content": "Since you’re staying within Jaipur and have ruled out flights and intercity travel, long-distance transport doesn’t apply. For a relaxed heritage trip, would you like to share how you’d prefer to get around the city and between the sights?"
+      },
+      {
+        "role": "user",
+        "content": "Use app-based taxis for long journeys and short walks nearby. We eat vegetarian food, have no allergies, and want a clean mid-range hotel near central Jaipur. Keep lunch and rest breaks, group nearby sights, and avoid long walks. Finish in Jaipur. Show the summary before planning."
+      },
+      {
+        "role": "user",
+        "content": "Increase our total budget to INR 20,000. Keep all other details unchanged and show the updated summary before planning."
+      },
+      {
+        "role": "assistant",
+        "content": "Here’s the trip I’ll plan:\nRoute: Jaipur, India → Jaipur\nDates: 2026-11-14 to 2026-11-15 (2 days)\nTravellers: 2 adult(s)\nTotal budget: 20,000 INR\nFinish in Jaipur\nPace: relaxed\nGetting around: taxi, walking\nInterests: history, architecture\nMust-see: Amber Fort, City Palace\nFood preferences: vegetarian\nDietary restrictions: vegetarian\nHotel comfort: mid range\nAccommodation: hotel\nAvoid: long walks\nImportant notes:\n• Start at Raj Mandir Cinema near MI Road at 09:00 on 2026-11-14.\n• Finish in Jaipur after 19:00 on 2026-11-15.\n• No flights or intercity travel.\n• The total budget includes one hotel night, meals, local transport and tickets.\n• Prefer a clean hotel near central Jaipur.\n• Keep lunch and rest breaks in the itinerary.\n• The trip finishes in Jaipur.\n• Keep lunch and rest breaks, and group nearby sights.\nDoes this look right? Reply yes to start planning, or tell me what you’d like to change."
+      },
+      {
+        "role": "user",
+        "content": "Yes, the latest summary is correct. Start planning."
+      },
+      {
+        "role": "assistant",
+        "content": "Perfect! Your trip details are confirmed and saved."
+      }
+    ]
+  },
+  {
+    "id": "lonavala-family",
+    "destination": "Lonavala",
+    "cover": "/samples/lonavala.svg",
+    "overview": "A two-day family break from Kharghar with your own car, one child-friendly stop each day, vegetarian meals and downtime. The return journey is explicitly included, with a generous afternoon buffer rather than a promised arrival time.",
+    "transport": "Outbound: Kharghar, Navi Mumbai → Lonavala, leaving at 8 am on 14 November. Return: Lonavala → Kharghar, Navi Mumbai on 15 November. Aim to leave Lonavala around 2 pm; check live traffic and leave earlier if needed to meet the 8 pm home deadline. This is a planning buffer, not a verified travel-time forecast.",
+    "stay": "One night in a clean mid-range family hotel in Lonavala. Confirm room availability, child policy, parking and check-in times directly before booking.",
+    "notes": [
+      "The ₹25,000 total budget covers two adults and one eight-year-old child, including fuel, tolls, parking, one hotel night, meals and activities. Individual costs are not quoted.",
+      "Use the live directions links before departure. The sample does not claim a verified driving duration or guaranteed 8 pm arrival.",
+      "Ryewood Park appears as Ryewood Garden in the generated place results. The public draft uses the park name and keeps strenuous treks and steep climbs out of the plan."
+    ],
+    "sources": [
+      {
+        "label": "Maharashtra Tourism: Lonavala",
+        "url": "https://maharashtratourism.gov.in/nature/lonavala/"
+      }
+    ],
+    "days": [
+      {
+        "day": 1,
+        "date": "2026-11-14",
+        "title": "Drive out, settle in and unwind",
+        "stops": [
+          {
+            "period": "8 am departure",
+            "title": "Drive from Kharghar to Lonavala",
+            "description": "Check the route and traffic before leaving. Keep a comfort stop available for the child, and include tolls and parking in the budget."
+          },
+          {
+            "period": "On arrival",
+            "title": "Lunch and hotel arrangements",
+            "description": "Have a vegetarian lunch and confirm check-in or luggage drop with your chosen hotel."
+          },
+          {
+            "period": "Afternoon",
+            "title": "Ryewood Park / Ryewood Garden",
+            "description": "Choose a short, easy stroll in the park rather than a long walk. Check access locally and keep the visit flexible.",
+            "allowance": "About 45–60 minutes"
+          },
+          {
+            "period": "Late afternoon",
+            "title": "Family rest",
+            "description": "Return to the hotel for downtime. Avoid adding a trek or a second major outing."
+          },
+          {
+            "period": "Evening",
+            "title": "Vegetarian dinner nearby",
+            "description": "Keep dinner close to the hotel so the family can have an early, unhurried evening."
+          }
+        ]
+      },
+      {
+        "day": 2,
+        "date": "2026-11-15",
+        "title": "One viewpoint, then home",
+        "stops": [
+          {
+            "period": "Morning",
+            "title": "Breakfast and check-out",
+            "description": "Pack and settle the hotel arrangements before the outing. Take your bags in the car if storage is uncertain."
+          },
+          {
+            "period": "Late morning",
+            "title": "Tiger Point",
+            "description": "Keep this to a short viewpoint visit, subject to weather and access. Stay within designated visitor areas and skip the stop if conditions are unsuitable.",
+            "allowance": "About 45–60 minutes"
+          },
+          {
+            "period": "Lunch",
+            "title": "Vegetarian lunch before departure",
+            "description": "Eat before setting out, with a short rest and a final traffic check."
+          },
+          {
+            "period": "Around 2 pm",
+            "title": "Return drive: Lonavala to Kharghar",
+            "description": "Start the return early enough to keep a substantial buffer for the 8 pm home deadline. Recheck the live ETA and shorten the outing or leave earlier if traffic requires it."
+          }
+        ]
+      }
+    ],
+    "title": "A family road trip to Lonavala",
+    "features": [
+      "self-drive route",
+      "child preferences",
+      "return deadline",
+      "rest breaks"
+    ],
+    "requirements": {
+      "days": 2,
+      "start_date": "2026-11-14",
+      "end_date": "2026-11-15",
+      "currency": "INR",
+      "budget": 25000,
+      "adults": 2,
+      "children": 1
+    },
+    "status": "draft",
+    "provenance": "Generated with Riya, then reviewed and simplified for this demo.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Plan a relaxed family road trip from Kharghar, Navi Mumbai to Lonavala on 14–15 November 2026. We are two adults and one child aged eight. Leave home at 8 am on the 14th and be home by 8 pm on the 15th. Budget INR 22,000 total for one hotel night, travel, meals and activities. We enjoy gardens and scenic viewpoints; Ryewood Park and Tiger Point are our must-sees. Please collect missing details and show a summary before planning."
+      },
+      {
+        "role": "assistant",
+        "content": "Kharghar, Navi Mumbai is your confirmed starting point, but the return location still needs your confirmation before I save it. Is the return location also Kharghar, Navi Mumbai?"
+      },
+      {
+        "role": "user",
+        "content": "We will use our own car throughout; include fuel, tolls and parking. Vegetarian meals, no allergies. A clean mid-range family hotel in Lonavala, relaxed pace, lunch breaks and afternoon rest. Avoid strenuous treks, steep climbs and late-night driving. Finish back in Kharghar. Show the trip summary before planning."
+      },
+      {
+        "role": "user",
+        "content": "Set the total budget to INR 25,000 and keep the child-friendly pace and the 8 pm return deadline. Show the updated summary before starting."
+      },
+      {
+        "role": "assistant",
+        "content": "Here’s the trip I’ll plan:\nRoute: Kharghar, Navi Mumbai → Lonavala\nDates: 2026-11-14 to 2026-11-15 (2 days)\nTravellers: 2 adult(s), 1 child(ren)\nTotal budget: 25,000 INR\nFinish in Kharghar\nPace: relaxed\nTravel: own car (self-drive)\nInterests: gardens, scenic viewpoints\nMust-see: Ryewood Park, Tiger Point\nFood preferences: vegetarian\nOther dietary restrictions: none stated\nHotel comfort: mid range\nAccommodation: hotel\nAvoid: strenuous treks; steep climbs; late-night driving\nImportant notes:\n• Leave Kharghar, Navi Mumbai at 8:00 on 2026-11-14 and be home in Kharghar, Navi Mumbai by 20:00 on 2026-11-15.\n• The total budget includes one hotel night, travel, meals and activities.\n• The total budget includes fuel, tolls and parking.\n• Prefer lunch breaks and afternoon rest.\n• Prefer a clean family hotel.\nDoes this look right? Reply yes to start planning, or tell me what you’d like to change."
+      },
+      {
+        "role": "user",
+        "content": "Yes, the latest summary is correct. Start planning."
+      },
+      {
+        "role": "assistant",
+        "content": "Perfect! Your trip details are confirmed and saved."
+      }
+    ]
+  },
+  {
+    "id": "paris-culture",
+    "destination": "Paris",
+    "cover": "/samples/paris.svg",
+    "overview": "Three relaxed days of art and architecture in Paris, with the Louvre and Eiffel Tower as the main experiences. The generated day order is retained, with short walks, metro journeys, vegetarian meals and time to rest.",
+    "transport": "Use the metro for longer local journeys, short walks between nearby stops, and taxis when needed. Start at Place Saint-Michel at 9 am on 16 November. On 18 November, return to Place Saint-Michel after the final museum visit and keep your remaining time free until your onward arrangements after 7 pm. Local journey times are not verified.",
+    "stay": "Two nights in a clean mid-range hotel in central Paris. No hotel or booking is confirmed; check rates, room availability and luggage storage independently.",
+    "notes": [
+      "The €1,100 total is the requested budget for both adults, covering two hotel nights, meals, tickets and local transport. It is not a live quotation.",
+      "This example puts the Louvre on Monday, 16 November, and Musée d’Orsay on Wednesday, 18 November. Check official opening dates and reserve required tickets before travelling.",
+      "The Louvre and Louvre Museum refer to the same requested attraction here. Exact entry times and the final meeting-point transfer remain planning suggestions."
+    ],
+    "sources": [
+      {
+        "label": "Louvre visitor information",
+        "url": "https://www.louvre.fr/en/visit"
+      },
+      {
+        "label": "Eiffel Tower visitor information",
+        "url": "https://www.toureiffel.paris/en"
+      },
+      {
+        "label": "Musée d’Orsay visitor information",
+        "url": "https://www.musee-orsay.fr/en/visit"
+      }
+    ],
+    "days": [
+      {
+        "day": 1,
+        "date": "2026-11-16",
+        "title": "The Louvre and central Paris",
+        "stops": [
+          {
+            "period": "9 am start",
+            "title": "Meet at Place Saint-Michel",
+            "description": "Start with a comfortable local transfer towards the Louvre. Check the metro route and your booked entry slot."
+          },
+          {
+            "period": "Morning",
+            "title": "Louvre Museum",
+            "description": "Choose a manageable selection of galleries rather than trying to cover the whole museum. Take breaks as needed.",
+            "allowance": "About 2–3 hours"
+          },
+          {
+            "period": "Lunch",
+            "title": "Vegetarian lunch and a pause",
+            "description": "Check menus and take a seated break before deciding whether to continue sightseeing."
+          },
+          {
+            "period": "Optional afternoon",
+            "title": "Sainte-Chapelle",
+            "description": "Visit only if energy, ticket availability and opening times allow. Otherwise return to the hotel for rest.",
+            "optional": true
+          },
+          {
+            "period": "Evening",
+            "title": "An easy dinner",
+            "description": "Keep the evening close to your hotel, with no long walk or additional museum planned."
+          }
+        ]
+      },
+      {
+        "day": 2,
+        "date": "2026-11-17",
+        "title": "The Eiffel Tower at an easy pace",
+        "stops": [
+          {
+            "period": "Morning",
+            "title": "Eiffel Tower",
+            "description": "Plan around a confirmed ticket slot if you want to go up the tower. A ground-level visit is an alternative; do not assume lift or summit availability.",
+            "allowance": "About 2 hours, excluding uncertain queues"
+          },
+          {
+            "period": "Lunch",
+            "title": "Vegetarian lunch",
+            "description": "Choose a restaurant with a suitable menu and take time to rest."
+          },
+          {
+            "period": "Afternoon",
+            "title": "A short riverside walk or hotel rest",
+            "description": "Keep this flexible and avoid a long cross-city walking route. Use the metro or a taxi when appropriate."
+          },
+          {
+            "period": "Evening",
+            "title": "Dinner near your base",
+            "description": "Leave the evening unhurried rather than adding another major attraction."
+          }
+        ]
+      },
+      {
+        "day": 3,
+        "date": "2026-11-18",
+        "title": "Musée d’Orsay and a clear finish",
+        "stops": [
+          {
+            "period": "Morning",
+            "title": "Check-out and luggage arrangements",
+            "description": "Confirm storage or plan to keep your bags with you; the sample does not guarantee hotel services."
+          },
+          {
+            "period": "Late morning",
+            "title": "Musée d’Orsay",
+            "description": "Focus on the collections that interest you most and allow time for breaks. Confirm admission and opening hours.",
+            "allowance": "About 2 hours"
+          },
+          {
+            "period": "Lunch",
+            "title": "Vegetarian lunch and rest",
+            "description": "Keep the afternoon open for an easy finish and your departure preparations."
+          },
+          {
+            "period": "Late afternoon / evening",
+            "title": "Return to Place Saint-Michel",
+            "description": "Collect any stored bags first, then arrange a local transfer to the agreed finish point. Keep a buffer for your onward plans after 7 pm and verify the actual transfer route."
+          }
+        ]
+      }
+    ],
+    "title": "Three days of art and culture in Paris",
+    "features": [
+      "international destination",
+      "EUR budget",
+      "museum scheduling",
+      "public transport"
+    ],
+    "requirements": {
+      "days": 3,
+      "start_date": "2026-11-16",
+      "end_date": "2026-11-18",
+      "currency": "EUR",
+      "budget": 1100,
+      "adults": 2,
+      "children": 0
+    },
+    "status": "draft",
+    "provenance": "Generated with Riya, then reviewed and simplified for this demo.",
+    "conversation": [
+      {
+        "role": "user",
+        "content": "Origin city: Paris, France. Plan a relaxed three-day Paris trip for two adults on 16–18 November 2026. Start at Place Saint-Michel in central Paris at 9 am on the 16th and finish in Paris after 7 pm on the 18th. No flights or travel to Paris. Budget EUR 1,000 total for two hotel nights, meals, tickets and local transport. We enjoy art, architecture and neighbourhood walks. The Louvre and Eiffel Tower are must-sees. Ask for missing preferences and show the summary before planning."
+      },
+      {
+        "role": "assistant",
+        "content": "For a Paris-only stay, you won’t need transport between cities; the metro, walking and occasional taxis should cover getting around. With the Louvre and Eiffel Tower already fixed, is there anything else you’d especially like included, such as food, river views or live music?"
+      },
+      {
+        "role": "user",
+        "content": "Use the metro where practical, short neighbourhood walks and taxis only if needed. Vegetarian meals and no allergies. A clean mid-range hotel in central Paris. Keep lunch and rest breaks and avoid rushing or long walks. Finish in central Paris. Place museum visits on suitable opening days, and label any booking or opening-hour detail that needs confirmation. Show the summary before planning."
+      },
+      {
+        "role": "user",
+        "content": "Increase the total budget to EUR 1,100, keeping everything else unchanged. Show the updated summary before planning."
+      },
+      {
+        "role": "assistant",
+        "content": "Here’s the trip I’ll plan:\nSightseeing in Paris\nDates: 2026-11-16 to 2026-11-18 (3 days)\nTravellers: 2 adult(s)\nTotal budget: 1,100 EUR\nFinish in Place Saint-Michel, Paris\nPace: relaxed\nGetting around: public transport, walking, taxi\nInterests: art, architecture, neighbourhood walks\nMust-see: The Louvre, Eiffel Tower\nFood preferences: vegetarian\nOther dietary restrictions: none stated\nHotel comfort: mid range\nAccommodation: hotel\nAvoid: long walks; rushing\nImportant notes:\n• Start at Place Saint-Michel in central Paris at 09:00 on 2026-11-16.\n• Finish in Paris after 19:00 on 2026-11-18.\n• No flights or travel to Paris.\n• The total budget includes two hotel nights, meals, tickets and local transport.\n• Prefer a clean central Paris hotel.\n• Keep lunch and rest breaks in the itinerary.\n• Prefer a clean mid-range hotel in central Paris.\n• Schedule museum visits on suitable opening days and flag booking or opening-hour details that need confirmation.\n• Available from 9:00 am on November 16 until after 7:00 pm on November 18, starting and finishing at Place Saint-Michel in central Paris.\n• The total budget includes two mid-range hotel nights, vegetarian meals, tickets and local transport.\n• No flights or intercity travel.\n• The total budget covers two mid-range hotel nights, vegetarian meals, tickets and local transport.\nDoes this look right? Reply yes to start planning, or tell me what you’d like to change."
+      },
+      {
+        "role": "user",
+        "content": "Yes, the latest summary is correct. Start planning."
+      },
+      {
+        "role": "assistant",
+        "content": "Perfect! Your trip details are confirmed and saved."
+      }
+    ]
+  }
+]
