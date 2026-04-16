@@ -10,17 +10,17 @@
     "sources": [{"label": "Jaipur visitor information", "url": "https://www.tourism.rajasthan.gov.in/jaipur.html"}],
     "days": [
       {"day": 1, "date": "2026-11-14", "title": "Amber Fort, with room to relax", "stops": [
-        {"period": "Morning", "title": "Start in central Jaipur", "description": "Meet near Raj Mandir Cinema at 9 am and take a taxi towards Amber Fort. This is a meeting point, not a cinema visit."},
-        {"period": "Late morning", "title": "Amber Fort / Amber Palace", "description": "Make the fort the main visit of the day. Allow time to enjoy the architecture and take breaks rather than adding another major attraction.", "allowance": "About 2–3 hours"},
+        {"period": "Morning", "title": "Start in central Jaipur", "mapQuery": "Raj Mandir Cinema, Jaipur", "description": "Meet near Raj Mandir Cinema at 9 am and take a taxi towards Amber Fort. This is a meeting point, not a cinema visit."},
+        {"period": "Late morning", "title": "Amber Fort / Amber Palace", "mapQuery": "Amber Fort, Jaipur", "description": "Make the fort the main visit of the day. Allow time to enjoy the architecture and take breaks rather than adding another major attraction.", "allowance": "About 2–3 hours"},
         {"period": "Lunch", "title": "Vegetarian lunch", "description": "Choose a vegetarian restaurant after the fort visit; check the menu and current opening hours."},
         {"period": "Afternoon", "title": "Hotel check-in and rest", "description": "Return towards central Jaipur, check in if the room is ready, and keep the afternoon for rest."},
         {"period": "Evening", "title": "An easy dinner", "description": "Stay close to the hotel for a relaxed vegetarian dinner. No additional sightseeing is required."}
       ]},
       {"day": 2, "date": "2026-11-15", "title": "City Palace and a gentle finish", "stops": [
         {"period": "Morning", "title": "Check out and arrange luggage storage", "description": "Confirm that the hotel can hold your bags before heading to the palace quarter."},
-        {"period": "Late morning", "title": "City Palace", "description": "Give this must-see a comfortable visit window. Keep the focus on history and architecture, with seated breaks when needed.", "allowance": "About 2 hours"},
+        {"period": "Late morning", "title": "City Palace", "mapQuery": "City Palace, Jaipur", "description": "Give this must-see a comfortable visit window. Keep the focus on history and architecture, with seated breaks when needed.", "allowance": "About 2 hours"},
         {"period": "Lunch", "title": "Vegetarian lunch and rest", "description": "Take a proper lunch break near the old city rather than rushing straight into another attraction."},
-        {"period": "Optional afternoon", "title": "Jantar Mantar, only if you feel fresh", "description": "This nearby stop is optional. Skip it if queues, heat or fatigue would make the day feel busy.", "optional": true},
+        {"period": "Optional afternoon", "title": "Jantar Mantar, only if you feel fresh", "mapQuery": "Jantar Mantar, Jaipur", "description": "This nearby stop is optional. Skip it if queues, heat or fatigue would make the day feel busy.", "optional": true},
         {"period": "Late afternoon / evening", "title": "Collect bags and finish in Jaipur", "description": "Keep the remaining time free for rest, dinner and your onward arrangements after 7 pm. Confirm your actual departure separately."}
       ]}
     ]
@@ -36,17 +36,17 @@
     "sources": [{"label": "Maharashtra Tourism: Lonavala", "url": "https://maharashtratourism.gov.in/nature/lonavala/"}],
     "days": [
       {"day": 1, "date": "2026-11-14", "title": "Drive out, settle in and unwind", "stops": [
-        {"period": "8 am departure", "title": "Drive from Kharghar to Lonavala", "description": "Check the route and traffic before leaving. Keep a comfort stop available for the child, and include tolls and parking in the budget."},
+        {"period": "8 am departure", "title": "Drive from Kharghar to Lonavala", "journey": {"origin":"Kharghar, Navi Mumbai","destination":"Lonavala"}, "description": "Check the route and traffic before leaving. Keep a comfort stop available for the child, and include tolls and parking in the budget."},
         {"period": "On arrival", "title": "Lunch and hotel arrangements", "description": "Have a vegetarian lunch and confirm check-in or luggage drop with your chosen hotel."},
-        {"period": "Afternoon", "title": "Ryewood Park / Ryewood Garden", "description": "Choose a short, easy stroll in the park rather than a long walk. Check access locally and keep the visit flexible.", "allowance": "About 45–60 minutes"},
+        {"period": "Afternoon", "title": "Ryewood Park / Ryewood Garden", "mapQuery": "Ryewood Park, Lonavala", "description": "Choose a short, easy stroll in the park rather than a long walk. Check access locally and keep the visit flexible.", "allowance": "About 45–60 minutes"},
         {"period": "Late afternoon", "title": "Family rest", "description": "Return to the hotel for downtime. Avoid adding a trek or a second major outing."},
         {"period": "Evening", "title": "Vegetarian dinner nearby", "description": "Keep dinner close to the hotel so the family can have an early, unhurried evening."}
       ]},
       {"day": 2, "date": "2026-11-15", "title": "One viewpoint, then home", "stops": [
         {"period": "Morning", "title": "Breakfast and check-out", "description": "Pack and settle the hotel arrangements before the outing. Take your bags in the car if storage is uncertain."},
-        {"period": "Late morning", "title": "Tiger Point", "description": "Keep this to a short viewpoint visit, subject to weather and access. Stay within designated visitor areas and skip the stop if conditions are unsuitable.", "allowance": "About 45–60 minutes"},
+        {"period": "Late morning", "title": "Tiger Point", "mapQuery": "Tiger Point, Lonavala", "description": "Keep this to a short viewpoint visit, subject to weather and access. Stay within designated visitor areas and skip the stop if conditions are unsuitable.", "allowance": "About 45–60 minutes"},
         {"period": "Lunch", "title": "Vegetarian lunch before departure", "description": "Eat before setting out, with a short rest and a final traffic check."},
-        {"period": "Around 2 pm", "title": "Return drive: Lonavala to Kharghar", "description": "Start the return early enough to keep a substantial buffer for the 8 pm home deadline. Recheck the live ETA and shorten the outing or leave earlier if traffic requires it."}
+        {"period": "Around 2 pm", "title": "Return drive: Lonavala to Kharghar", "journey": {"origin":"Lonavala","destination":"Kharghar, Navi Mumbai"}, "description": "Start the return early enough to keep a substantial buffer for the 8 pm home deadline. Recheck the live ETA and shorten the outing or leave earlier if traffic requires it."}
       ]}
     ]
   },
@@ -61,23 +61,23 @@
     "sources": [{"label": "Louvre visitor information", "url": "https://www.louvre.fr/en/visit"}, {"label": "Eiffel Tower visitor information", "url": "https://www.toureiffel.paris/en"}, {"label": "Musée d’Orsay visitor information", "url": "https://www.musee-orsay.fr/en/visit"}],
     "days": [
       {"day": 1, "date": "2026-11-16", "title": "The Louvre and central Paris", "stops": [
-        {"period": "9 am start", "title": "Meet at Place Saint-Michel", "description": "Start with a comfortable local transfer towards the Louvre. Check the metro route and your booked entry slot."},
-        {"period": "Morning", "title": "Louvre Museum", "description": "Choose a manageable selection of galleries rather than trying to cover the whole museum. Take breaks as needed.", "allowance": "About 2–3 hours"},
+        {"period": "9 am start", "title": "Meet at Place Saint-Michel", "mapQuery": "Place Saint-Michel, Paris", "description": "Start with a comfortable local transfer towards the Louvre. Check the metro route and your booked entry slot."},
+        {"period": "Morning", "title": "Louvre Museum", "mapQuery": "Louvre Museum, Paris", "description": "Choose a manageable selection of galleries rather than trying to cover the whole museum. Take breaks as needed.", "allowance": "About 2–3 hours"},
         {"period": "Lunch", "title": "Vegetarian lunch and a pause", "description": "Check menus and take a seated break before deciding whether to continue sightseeing."},
-        {"period": "Optional afternoon", "title": "Sainte-Chapelle", "description": "Visit only if energy, ticket availability and opening times allow. Otherwise return to the hotel for rest.", "optional": true},
+        {"period": "Optional afternoon", "title": "Sainte-Chapelle", "mapQuery": "Sainte-Chapelle, Paris", "description": "Visit only if energy, ticket availability and opening times allow. Otherwise return to the hotel for rest.", "optional": true},
         {"period": "Evening", "title": "An easy dinner", "description": "Keep the evening close to your hotel, with no long walk or additional museum planned."}
       ]},
       {"day": 2, "date": "2026-11-17", "title": "The Eiffel Tower at an easy pace", "stops": [
-        {"period": "Morning", "title": "Eiffel Tower", "description": "Plan around a confirmed ticket slot if you want to go up the tower. A ground-level visit is an alternative; do not assume lift or summit availability.", "allowance": "About 2 hours, excluding uncertain queues"},
+        {"period": "Morning", "title": "Eiffel Tower", "mapQuery": "Eiffel Tower, Paris", "description": "Plan around a confirmed ticket slot if you want to go up the tower. A ground-level visit is an alternative; do not assume lift or summit availability.", "allowance": "About 2 hours, excluding uncertain queues"},
         {"period": "Lunch", "title": "Vegetarian lunch", "description": "Choose a restaurant with a suitable menu and take time to rest."},
         {"period": "Afternoon", "title": "A short riverside walk or hotel rest", "description": "Keep this flexible and avoid a long cross-city walking route. Use the metro or a taxi when appropriate."},
         {"period": "Evening", "title": "Dinner near your base", "description": "Leave the evening unhurried rather than adding another major attraction."}
       ]},
       {"day": 3, "date": "2026-11-18", "title": "Musée d’Orsay and a clear finish", "stops": [
         {"period": "Morning", "title": "Check-out and luggage arrangements", "description": "Confirm storage or plan to keep your bags with you; the sample does not guarantee hotel services."},
-        {"period": "Late morning", "title": "Musée d’Orsay", "description": "Focus on the collections that interest you most and allow time for breaks. Confirm admission and opening hours.", "allowance": "About 2 hours"},
+        {"period": "Late morning", "title": "Musée d’Orsay", "mapQuery": "Musée d’Orsay, Paris", "description": "Focus on the collections that interest you most and allow time for breaks. Confirm admission and opening hours.", "allowance": "About 2 hours"},
         {"period": "Lunch", "title": "Vegetarian lunch and rest", "description": "Keep the afternoon open for an easy finish and your departure preparations."},
-        {"period": "Late afternoon / evening", "title": "Return to Place Saint-Michel", "description": "Collect any stored bags first, then arrange a local transfer to the agreed finish point. Keep a buffer for your onward plans after 7 pm and verify the actual transfer route."}
+        {"period": "Late afternoon / evening", "title": "Return to Place Saint-Michel", "mapQuery": "Place Saint-Michel, Paris", "description": "Collect any stored bags first, then arrange a local transfer to the agreed finish point. Keep a buffer for your onward plans after 7 pm and verify the actual transfer route."}
       ]}
     ]
   }

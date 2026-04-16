@@ -31,6 +31,8 @@ export interface DayPlan {
 }
 
 export interface NormalizedPlan {
+  travelNotes?: string[]
+  stayNotes?: string[]
   destination: string
   deliveryStatus?: string
   displayRefreshRequired?: boolean

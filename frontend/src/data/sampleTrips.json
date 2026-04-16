@@ -26,11 +26,13 @@
           {
             "period": "Morning",
             "title": "Start in central Jaipur",
+            "mapQuery": "Raj Mandir Cinema, Jaipur",
             "description": "Meet near Raj Mandir Cinema at 9 am and take a taxi towards Amber Fort. This is a meeting point, not a cinema visit."
           },
           {
             "period": "Late morning",
             "title": "Amber Fort / Amber Palace",
+            "mapQuery": "Amber Fort, Jaipur",
             "description": "Make the fort the main visit of the day. Allow time to enjoy the architecture and take breaks rather than adding another major attraction.",
             "allowance": "About 2–3 hours"
           },
@@ -64,6 +66,7 @@
           {
             "period": "Late morning",
             "title": "City Palace",
+            "mapQuery": "City Palace, Jaipur",
             "description": "Give this must-see a comfortable visit window. Keep the focus on history and architecture, with seated breaks when needed.",
             "allowance": "About 2 hours"
           },
@@ -75,6 +78,7 @@
           {
             "period": "Optional afternoon",
             "title": "Jantar Mantar, only if you feel fresh",
+            "mapQuery": "Jantar Mantar, Jaipur",
             "description": "This nearby stop is optional. Skip it if queues, heat or fatigue would make the day feel busy.",
             "optional": true
           },
@@ -162,6 +166,10 @@
           {
             "period": "8 am departure",
             "title": "Drive from Kharghar to Lonavala",
+            "journey": {
+              "origin": "Kharghar, Navi Mumbai",
+              "destination": "Lonavala"
+            },
             "description": "Check the route and traffic before leaving. Keep a comfort stop available for the child, and include tolls and parking in the budget."
           },
           {
@@ -172,6 +180,7 @@
           {
             "period": "Afternoon",
             "title": "Ryewood Park / Ryewood Garden",
+            "mapQuery": "Ryewood Park, Lonavala",
             "description": "Choose a short, easy stroll in the park rather than a long walk. Check access locally and keep the visit flexible.",
             "allowance": "About 45–60 minutes"
           },
@@ -200,6 +209,7 @@
           {
             "period": "Late morning",
             "title": "Tiger Point",
+            "mapQuery": "Tiger Point, Lonavala",
             "description": "Keep this to a short viewpoint visit, subject to weather and access. Stay within designated visitor areas and skip the stop if conditions are unsuitable.",
             "allowance": "About 45–60 minutes"
           },
@@ -211,6 +221,10 @@
           {
             "period": "Around 2 pm",
             "title": "Return drive: Lonavala to Kharghar",
+            "journey": {
+              "origin": "Lonavala",
+              "destination": "Kharghar, Navi Mumbai"
+            },
             "description": "Start the return early enough to keep a substantial buffer for the 8 pm home deadline. Recheck the live ETA and shorten the outing or leave earlier if traffic requires it."
           }
         ]
@@ -300,11 +314,13 @@
           {
             "period": "9 am start",
             "title": "Meet at Place Saint-Michel",
+            "mapQuery": "Place Saint-Michel, Paris",
             "description": "Start with a comfortable local transfer towards the Louvre. Check the metro route and your booked entry slot."
           },
           {
             "period": "Morning",
             "title": "Louvre Museum",
+            "mapQuery": "Louvre Museum, Paris",
             "description": "Choose a manageable selection of galleries rather than trying to cover the whole museum. Take breaks as needed.",
             "allowance": "About 2–3 hours"
           },
@@ -316,6 +332,7 @@
           {
             "period": "Optional afternoon",
             "title": "Sainte-Chapelle",
+            "mapQuery": "Sainte-Chapelle, Paris",
             "description": "Visit only if energy, ticket availability and opening times allow. Otherwise return to the hotel for rest.",
             "optional": true
           },
@@ -334,6 +351,7 @@
           {
             "period": "Morning",
             "title": "Eiffel Tower",
+            "mapQuery": "Eiffel Tower, Paris",
             "description": "Plan around a confirmed ticket slot if you want to go up the tower. A ground-level visit is an alternative; do not assume lift or summit availability.",
             "allowance": "About 2 hours, excluding uncertain queues"
           },
@@ -367,6 +385,7 @@
           {
             "period": "Late morning",
             "title": "Musée d’Orsay",
+            "mapQuery": "Musée d’Orsay, Paris",
             "description": "Focus on the collections that interest you most and allow time for breaks. Confirm admission and opening hours.",
             "allowance": "About 2 hours"
           },
@@ -378,6 +397,7 @@
           {
             "period": "Late afternoon / evening",
             "title": "Return to Place Saint-Michel",
+            "mapQuery": "Place Saint-Michel, Paris",
             "description": "Collect any stored bags first, then arrange a local transfer to the agreed finish point. Keep a buffer for your onward plans after 7 pm and verify the actual transfer route."
           }
         ]

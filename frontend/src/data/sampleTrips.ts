@@ -14,7 +14,11 @@ export interface SampleTrip {
   notes: string[]
   sources: { label: string; url: string }[]
   requirements: { days: number; start_date: string; end_date: string; currency: string; budget: number; adults: number; children: number }
-  days: { day: number; date: string; title: string; stops: { period: string; title: string; description: string; allowance?: string; optional?: boolean }[] }[]
+  days: { day: number; date: string; title: string; stops: {
+    period: string; title: string; description: string; allowance?: string; optional?: boolean
+    mapQuery?: string
+    journey?: { origin: string; destination: string }
+  }[] }[]
   conversation: { role: string; content: string }[]
 }
 

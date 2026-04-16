@@ -34,6 +34,7 @@ export default function ItineraryCanvas({ plan, onRefresh, refreshing = false, r
         {/* SECTION 2: MAP & STOPS (Screen Only) */}
         {activeTab === 'map' && (
           <div className="space-y-6 print:hidden">
+            {plan.travelNotes?.map(note => <p key={note} className="text-sm leading-relaxed text-slate-600">{note}</p>)}
             <div className="bg-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
@@ -95,6 +96,7 @@ export default function ItineraryCanvas({ plan, onRefresh, refreshing = false, r
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {plan.stayNotes?.map(note => <p key={note} className="text-sm leading-relaxed text-slate-600">{note}</p>)}
             {plan.stays.length === 0 && <p className="text-sm text-slate-600">No hotel has been selected for this itinerary yet. Check the review notes before choosing a stay.</p>}
             {plan.stays.map((stay, idx) => (
               <div
