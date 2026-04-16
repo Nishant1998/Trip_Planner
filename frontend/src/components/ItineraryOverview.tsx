@@ -4,7 +4,7 @@ import type { NormalizedPlan } from '../lib/plan'
 interface Props {
   plan: NormalizedPlan
   onReview: () => void
-  onRefresh: () => void
+  onRefresh?: () => void
   refreshing: boolean
   refreshError: string | null
 }
@@ -66,7 +66,7 @@ export default function ItineraryOverview({ plan, onReview, onRefresh, refreshin
       </div>
       {plan.budgetHealth.withinBudget === false && <p className="mt-2 text-xs font-semibold text-amber-900">Estimated costs may exceed your trip budget.</p>}
 
-      {plan.displayRefreshRequired && Boolean(plan.placeIds?.length) && (
+      {onRefresh && plan.displayRefreshRequired && Boolean(plan.placeIds?.length) && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 print:hidden">
           <p role="status">{refreshing ? 'Loading place details and photos…' : plan.unresolvedPlaces
             ? `${plan.unresolvedPlaces} planned stops could not be loaded. The itinerary below is incomplete; retry to restore their details.`

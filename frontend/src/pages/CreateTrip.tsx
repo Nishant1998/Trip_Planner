@@ -6,10 +6,8 @@ import {
   Send,
   Calendar,
   MapPin,
-  Car,
   CheckCircle2,
   Lock,
-  Info,
   Zap,
   SlidersHorizontal,
   RefreshCw,
@@ -17,11 +15,6 @@ import {
   Users,
   Wallet,
   Layers,
-  ExternalLink,
-  Sun,
-  CheckSquare,
-  Square,
-  Navigation,
   Loader2,
   AlertCircle,
   LogIn,
@@ -30,12 +23,9 @@ import { useAuth } from '../context/AuthContext'
 import { apiFetch, readApiError } from '../lib/api'
 import { getWelcomeMessage } from '../lib/welcome'
 import { parseBackendPlan, type NormalizedPlan } from '../lib/plan'
-import PlaceImage from '../components/PlaceImage'
 import { getPlanningState, mergePlanningProgress, shouldPollTrip, type PlanningJob } from '../lib/planning-status'
 import { applyChatStream, mergeChatMessages, type ChatMessage as Message } from '../lib/chat-messages'
-import ItineraryOverview from '../components/ItineraryOverview'
-import ItineraryReview from '../components/ItineraryReview'
-import ItineraryTabs, { type ItinerarySection } from '../components/ItineraryTabs'
+import ItineraryCanvas from '../components/ItineraryCanvas'
 
 type JobStatus = PlanningJob
 
@@ -157,9 +147,6 @@ const CreateTrip: React.FC = () => {
   const [displayError, setDisplayError] = useState<string | null>(null)
   const [isInitialTripLoading, setIsInitialTripLoading] = useState(Boolean(tripId && (!cachedTrip || !cachedMessages)))
   const [isCanvasOpen, setIsCanvasOpen] = useState<boolean>(false)
-  const [activeTab, setActiveTab] = useState<ItinerarySection>('timeline')
-  const [selectedDayFilter, setSelectedDayFilter] = useState<number | 'all'>('all')
-  const [checkedItems, setCheckedItems] = useState<Record<number, boolean>>({})
 
   const chatEndRef = useRef<HTMLDivElement>(null)
   const followChatRef = useRef(true)
@@ -831,10 +818,6 @@ const CreateTrip: React.FC = () => {
     void handleSendMessage(suggestion)
   }
 
-  const togglePackingCheck = (index: number) => {
-    setCheckedItems((prev) => ({ ...prev, [index]: !prev[index] }))
-  }
-
   const { isDone, isPlanning, hasPlanningFailure, hasPlanningStarted } = getPlanningState(
     trip?.status, job?.status, Boolean(plan),
   )
@@ -1240,297 +1223,8 @@ const CreateTrip: React.FC = () => {
 
             {/* STATE 3: Finalized Master Itinerary Canvas */}
             {isDone && plan && (
-              <div className="flex-1 min-h-0 overflow-y-auto print:overflow-visible">
-                <ItineraryOverview plan={plan} onReview={() => setActiveTab('review')}
-                  onRefresh={refreshPlanDisplay} refreshing={refreshingDisplay} refreshError={displayError} />
-                <ItineraryTabs active={activeTab} onChange={setActiveTab}
-                  issues={plan.alerts.filter(alert => alert.severity === 'error').length} />
-
-                {/* Tab Contents & Printable Document */}
-                <div className="p-4 sm:p-6 print:p-0 space-y-6">
-                  {/* SECTION 1: TIMELINE */}
-                  <div className={`${activeTab === 'timeline' ? 'block' : 'hidden'} print:block space-y-6 print:mb-8`}>
-                    <div className="flex items-center gap-1.5 pb-2 overflow-x-auto print:hidden">
-                      <button
-                        onClick={() => setSelectedDayFilter('all')}
-                        className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer border shrink-0 ${
-                          selectedDayFilter === 'all'
-                            ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
-                      >
-                        All Days ({plan.days.length})
-                      </button>
-                      {plan.days.map((d) => (
-                        <button
-                          key={d.day}
-                          onClick={() => setSelectedDayFilter(d.day)}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer border shrink-0 ${
-                            selectedDayFilter === d.day
-                              ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                              : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                          }`}
-                        >
-                          Day {d.day}
-                        </button>
-                      ))}
-                    </div>
-
-                    {plan.days.map((day) => (
-                      <div
-                        key={day.day}
-                        className={`${
-                          selectedDayFilter === 'all' || selectedDayFilter === day.day ? 'block' : 'hidden'
-                        } print:block bg-slate-50/70 rounded-2xl p-4 sm:p-5 border border-slate-200 print:bg-white print:border-slate-300 print:mb-6 print:break-inside-avoid`}
-                      >
-                        <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-3">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-black uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-100 print:bg-slate-100 print:text-slate-900">
-                                Day {day.day}
-                              </span>
-                              {day.weatherSummary && (
-                                <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
-                                  <Sun className="w-3.5 h-3.5 text-amber-500" /> {day.weatherSummary}
-                                </span>
-                              )}
-                            </div>
-                            <h3 className="text-base sm:text-lg font-bold text-slate-900 mt-1">{day.title}</h3>
-                          </div>
-                          <span className="text-[11px] font-semibold text-slate-600 bg-white px-3 py-1 rounded-full border border-slate-200 shadow-2xs hidden sm:inline-block">
-                            {day.theme}
-                          </span>
-                        </div>
-                        {day.date && <p className="mb-2 text-xs font-medium text-slate-500">{day.date}</p>}
-                        {day.summary && <p className="mb-3 text-sm leading-relaxed text-slate-700">{day.summary}</p>}
-                        {day.workload && <p className="mb-4 text-xs leading-relaxed text-slate-600">{day.workload}</p>}
-                        <div className="space-y-3">
-                          {day.activities.map((act, idx) => (
-                            <React.Fragment key={idx}>
-                              {idx > 0 && act.driveTime && (
-                                <div className="flex items-center gap-2 pl-3 py-1 text-slate-400 text-xs">
-                                  <div className="w-0.5 h-4 bg-slate-300 ml-1" />
-                                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 text-[11px] font-semibold">
-                                    <Car className="w-3 h-3 text-slate-500" />
-                                    {act.driveTime}
-                                  </span>
-                                </div>
-                              )}
-
-                              <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs hover:border-indigo-200 transition flex gap-3.5 items-start print:border-slate-300">
-                                {act.hasPlace !== false && <PlaceImage src={act.imageUrl} name={act.title}
-                                  className="w-16 h-16 sm:w-20 sm:h-20" />}
-
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono font-bold text-xs">
-                                        {act.time}
-                                      </span>
-                                      <h4 className="break-words font-bold text-xs leading-relaxed sm:text-sm text-slate-900">
-                                        {act.title}
-                                      </h4>
-                                    </div>
-                                    {act.cost && <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200 shrink-0">
-                                      {act.cost}
-                                    </span>}
-                                  </div>
-
-                                  <p className="text-xs text-slate-600 leading-relaxed mb-2">
-                                    {act.description}
-                                  </p>
-                                  {act.imageUrl && Boolean(act.photoCredits?.length) && <p className="mb-2 text-[10px] leading-relaxed text-slate-500">
-                                    Photo: {act.photoCredits?.join(', ')} · Google Maps
-                                  </p>}
-
-                                  <div className="flex items-center justify-between pt-1 border-t border-slate-50 text-xs print:hidden">
-                                    <span className="text-[11px] text-slate-400 font-medium">
-                                      Duration: {act.duration}
-                                    </span>
-                                    {act.hasPlace !== false && <a
-                                      href={
-                                        act.mapUrl ||
-                                        `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                                          act.title + ' ' + plan.destination
-                                        )}`
-                                      }
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer"
-                                    >
-                                      <MapPin className="w-3 h-3" />
-                                      <span>Directions</span>
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                    </a>}
-                                  </div>
-                                </div>
-                              </div>
-                            </React.Fragment>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {plan.budgetTargets && activeTab === 'timeline' && (
-                    <section className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 print:break-inside-avoid">
-                      <h3 className="text-base font-bold text-slate-900">Full-trip spending targets</h3>
-                      <p className="mt-2 text-xs leading-relaxed text-slate-600">{plan.budgetTargets.basis}</p>
-                      <dl className="mt-3 divide-y divide-slate-100 text-sm">
-                        {Object.entries(plan.budgetTargets.categories).map(([category, amount]) => (
-                          <div key={category} className="flex justify-between gap-4 py-2">
-                            <dt className="capitalize text-slate-600">{category.replace(/_/g, ' ')}</dt>
-                            <dd className="font-semibold text-slate-900">{amount}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                      <p className="mt-3 text-xs font-medium text-amber-800">Targets cover all travelers and {plan.budgetTargets.nights} nights. They are not prices or proof that the trip fits the budget.</p>
-                    </section>
-                  )}
-
-                  {/* SECTION 2: MAP & STOPS (Screen Only) */}
-                  {activeTab === 'map' && (
-                    <div className="space-y-6 print:hidden">
-                      <div className="bg-slate-900 rounded-3xl p-5 sm:p-6 text-white shadow-lg relative overflow-hidden">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                          <div>
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[11px] font-bold mb-2 border border-indigo-400/20">
-                              <Navigation className="w-3 h-3" />
-                              <span>Chronological Route Sequence</span>
-                            </div>
-                            <h3 className="text-base sm:text-lg font-black">Interactive Route & Waypoints</h3>
-                            <p className="text-xs text-slate-300 mt-0.5">
-                              Selected places in itinerary order. Confirm directions and travel times before leaving.
-                            </p>
-                          </div>
-
-                          <a
-                            href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(plan.destination)}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-md transition cursor-pointer shrink-0"
-                          >
-                            <MapPin className="w-3.5 h-3.5" />
-                            <span>Open in Google Maps</span>
-                            <ExternalLink className="w-3 h-3" />
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
-                          Chronological Waypoint Stops:
-                        </h4>
-                        {plan.days.flatMap((d) => d.activities).filter((act) => act.hasPlace !== false).map((act, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between p-3 sm:p-3.5 rounded-2xl bg-slate-50 border border-slate-200/80 hover:bg-white hover:border-indigo-200 transition shadow-2xs gap-3"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-7 h-7 rounded-full bg-indigo-600 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-xs">
-                                {idx + 1}
-                              </div>
-                              <div className="min-w-0">
-                                <h5 className="font-bold text-xs text-slate-900 truncate">{act.title}</h5>
-                                <p className="text-[11px] text-slate-500 truncate">{act.description}</p>
-                              </div>
-                            </div>
-                            <span className="text-[10px] font-bold text-slate-600 bg-white border border-slate-200 px-2.5 py-1 rounded-md shrink-0">
-                              {act.time}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* SECTION 3: STAYS & DINING */}
-                  <div className={`${activeTab === 'stays' ? 'block' : 'hidden'} print:block space-y-6 print:mb-8 print:break-inside-avoid`}>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-slate-900 text-sm">Curated Accommodations</h3>
-                      <span className="text-xs text-slate-400 font-medium">Estimated stay suggestions</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {plan.stays.length === 0 && <p className="text-sm text-slate-600">No hotel has been selected for this itinerary yet. Check the review notes before choosing a stay.</p>}
-                      {plan.stays.map((stay, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:border-indigo-300 transition group print:border-slate-300 print:break-inside-avoid"
-                        >
-                          <div className="relative h-40 overflow-hidden">
-                            <PlaceImage src={stay.image} name={stay.name} className="h-full w-full" />
-                            <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur-md text-white font-bold text-[10px]">
-                              Stay Recommendation
-                            </span>
-                          </div>
-                          <div className="p-4">
-                            <div className="flex items-center justify-between text-xs font-bold mb-1">
-                              <h4 className="text-slate-900 text-sm font-black">{stay.name}</h4>
-                              {stay.rating ? <span className="text-amber-500">★ {stay.rating}</span> : <span className="text-slate-400">Confirm before booking</span>}
-                            </div>
-                            <p className="text-xs text-slate-500">{stay.type}</p>
-                            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                              <span className="font-black text-emerald-700">{stay.pricePerNight}</span>
-                              <span className="text-[11px] text-indigo-600 font-bold">Confirm before booking</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* SECTION 4: LOCAL TIPS & PACKING CHECKLIST */}
-                  <div className={`${activeTab === 'tips' ? 'block' : 'hidden'} print:block space-y-6 print:break-inside-avoid`}>
-                    <div className="bg-indigo-50/60 rounded-2xl p-5 border border-indigo-100 print:bg-white print:border-slate-300">
-                      <h3 className="font-bold text-indigo-900 print:text-slate-900 text-sm mb-3 flex items-center gap-2">
-                        <Info className="w-4 h-4 text-indigo-600" />
-                        <span>Practical travel tips</span>
-                      </h3>
-                      <ul className="space-y-2.5 text-xs text-indigo-900 print:text-slate-700">
-                        {plan.localTips.length === 0 && <li>No additional travel tips are available for this plan.</li>}
-                        {plan.localTips.map((tip, idx) => (
-                          <li key={idx} className="flex items-start gap-2.5">
-                            <span className="text-indigo-600 font-bold shrink-0">•</span>
-                            <span className="leading-relaxed">{tip}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div className="bg-emerald-50/60 rounded-2xl p-5 border border-emerald-100 print:bg-white print:border-slate-300">
-                      <h3 className="font-bold text-emerald-900 print:text-slate-900 text-sm mb-3 flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                        <span>🎒 Packing Checklist</span>
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {plan.packingList.length === 0 && <p className="text-xs text-slate-600">No packing suggestions are available for this plan.</p>}
-                        {plan.packingList.map((item, idx) => (
-                          <button
-                            key={idx}
-                            aria-pressed={Boolean(checkedItems[idx])}
-                            onClick={() => togglePackingCheck(idx)}
-                            className="w-full flex items-center gap-2.5 p-2 rounded-xl hover:bg-emerald-100/50 text-left transition cursor-pointer text-xs text-emerald-950 print:text-slate-800 font-medium"
-                          >
-                            {checkedItems[idx] ? (
-                              <CheckSquare className="w-4 h-4 text-emerald-600 shrink-0" />
-                            ) : (
-                              <Square className="w-4 h-4 text-emerald-400 shrink-0" />
-                            )}
-                            <span className={checkedItems[idx] ? 'line-through text-emerald-600' : ''}>
-                              {item}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                  </div>
-                  <div className={`${activeTab === 'review' ? 'block' : 'hidden'} print:block print:break-before-page`}>
-                    <ItineraryReview plan={plan} />
-                  </div>
-                </div>
-              </div>
+              <ItineraryCanvas plan={plan} onRefresh={refreshPlanDisplay}
+                refreshing={refreshingDisplay} refreshError={displayError} />
             )}
           </div>
         )}
