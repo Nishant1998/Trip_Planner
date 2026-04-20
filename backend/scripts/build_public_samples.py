@@ -18,7 +18,18 @@ def build_samples():
         (backend / "samples/public_edits.json").read_text(encoding="utf-8")
     )
     samples = []
+    photos = json.loads(
+        (backend / "samples/photo_manifest.json").read_text(encoding="utf-8")
+    )
     for edit in edits:
+        cover_photo = photos["covers"][edit["destination"]]
+        edit["cover"] = cover_photo["url"]
+        edit["coverPhoto"] = cover_photo
+        for day in edit["days"]:
+            for stop in day["stops"]:
+                photo = photos["places"].get(stop.get("mapQuery"))
+                if photo:
+                    stop["photo"] = photo
         source = json.loads(
             (
                 backend / "samples/generated/website" / edit["id"] / "sample.json"

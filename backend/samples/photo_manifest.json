@@ -1,0 +1,83 @@
+{
+  "covers": {
+    "Jaipur": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Amber_fort_top_view.jpg/960px-Amber_fort_top_view.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Amber_fort_top_view.jpg",
+      "author": "Siddharth tiwari",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    "Lonavala": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Tiger_Point_Lonavala.jpg/960px-Tiger_Point_Lonavala.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Tiger_Point_Lonavala.jpg",
+      "author": "Sunishu5",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en"
+    },
+    "Paris": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/EiffelTowerdayshootbyedwintan.jpg/960px-EiffelTowerdayshootbyedwintan.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:EiffelTowerdayshootbyedwintan.jpg",
+      "author": "Edwintcg",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    }
+  },
+  "places": {
+    "Amber Fort, Jaipur": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Amber_fort_top_view.jpg/330px-Amber_fort_top_view.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Amber_fort_top_view.jpg",
+      "author": "Siddharth tiwari",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    "City Palace, Jaipur": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a6/Portal%2C_Pitam_Niwas_Chowk%2C_City_Palace%2C_Jaipur%2C_20191218_1000_9059.jpg/330px-Portal%2C_Pitam_Niwas_Chowk%2C_City_Palace%2C_Jaipur%2C_20191218_1000_9059.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Portal,_Pitam_Niwas_Chowk,_City_Palace,_Jaipur,_20191218_1000_9059.jpg",
+      "author": "Jakub Hałun",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    "Jantar Mantar, Jaipur": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/20191218_Jantar_Mantar%2C_Jaipur_0906_8983_DxO.jpg/330px-20191218_Jantar_Mantar%2C_Jaipur_0906_8983_DxO.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:20191218_Jantar_Mantar,_Jaipur_0906_8983_DxO.jpg",
+      "author": "Jakub Hałun",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    },
+    "Tiger Point, Lonavala": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Tiger_Point_Lonavala.jpg/330px-Tiger_Point_Lonavala.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Tiger_Point_Lonavala.jpg",
+      "author": "Sunishu5",
+      "license": "CC0",
+      "licenseUrl": "https://creativecommons.org/publicdomain/zero/1.0/deed.en"
+    },
+    "Louvre Museum, Paris": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/View_of_the_Louvre_palace_from_the_Jardin_des_Tuileries_%28166775217%29.jpg/330px-View_of_the_Louvre_palace_from_the_Jardin_des_Tuileries_%28166775217%29.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:View_of_the_Louvre_palace_from_the_Jardin_des_Tuileries_(166775217).jpg",
+      "author": "Dronepicr",
+      "license": "CC BY 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by/3.0"
+    },
+    "Eiffel Tower, Paris": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/EiffelTowerdayshootbyedwintan.jpg/330px-EiffelTowerdayshootbyedwintan.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:EiffelTowerdayshootbyedwintan.jpg",
+      "author": "Edwintcg",
+      "license": "CC BY-SA 3.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+    },
+    "Musée d’Orsay, Paris": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/80/MuseeOrsay_20070324.jpg/330px-MuseeOrsay_20070324.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:MuseeOrsay_20070324.jpg",
+      "author": "Benh",
+      "license": "CC BY 2.5",
+      "licenseUrl": "https://creativecommons.org/licenses/by/2.5"
+    },
+    "Sainte-Chapelle, Paris": {
+      "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/Paris%2C_Sainte-Chapelle%2C_Au%C3%9Fenansicht_%281%29.jpg/330px-Paris%2C_Sainte-Chapelle%2C_Au%C3%9Fenansicht_%281%29.jpg",
+      "source": "https://commons.wikimedia.org/wiki/File:Paris,_Sainte-Chapelle,_Au%C3%9Fenansicht_(1).jpg",
+      "author": "Cmcmcm1",
+      "license": "CC BY-SA 4.0",
+      "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+    }
+  }
+}

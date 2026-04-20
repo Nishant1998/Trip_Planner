@@ -16,7 +16,16 @@ export default function SampleTripCards() {
           {sampleTrips.map(sample => (
             <Link key={sample.id} to={`/examples/${sample.id}`} className="group flex flex-col bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:border-indigo-300 hover:shadow-md transition focus-visible:outline-2 focus-visible:outline-indigo-600 focus-visible:outline-offset-4">
               <div className="relative aspect-[2/1] shrink-0 bg-slate-100">
-                <img src={sample.cover} alt={`${sample.destination} destination illustration`} width={960} height={480} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                <img src={sample.cover} alt={`${sample.destination} destination photo`} width={960} height={480} loading="lazy" decoding="async"
+                  title={`Photo: ${sample.coverPhoto.author} · ${sample.coverPhoto.license}. Credits and license in the sample Review tab.`}
+                  onError={event => {
+                    const image = event.currentTarget
+                    if (image.getAttribute('src') === '/covers/abstract-1.svg') return
+                    image.src = '/covers/abstract-1.svg'
+                    image.alt = `${sample.destination} trip cover unavailable`
+                    image.title = 'Destination photo unavailable'
+                  }}
+                  className="absolute inset-0 w-full h-full max-w-full object-cover" />
                 <span className="absolute top-4 left-4 bg-white/95 rounded-full px-3 py-1 text-xs font-bold text-slate-700">Sample draft</span>
               </div>
               <div className="p-5 sm:p-6 flex flex-col flex-1">

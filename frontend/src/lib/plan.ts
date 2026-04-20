@@ -10,6 +10,7 @@ export interface Activity {
   imageUrl?: string
   hasPlace?: boolean
   photoCredits?: string[]
+  photoSourceUrl?: string
 }
 
 export interface DayPlan {

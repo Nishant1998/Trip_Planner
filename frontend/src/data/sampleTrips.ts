@@ -1,10 +1,19 @@
 import data from './sampleTrips.json'
 
+export interface SamplePhoto {
+  url: string
+  source: string
+  author: string
+  license: string
+  licenseUrl: string
+}
+
 export interface SampleTrip {
   id: string
   title: string
   destination: string
   cover: string
+  coverPhoto: SamplePhoto
   overview: string
   transport: string
   stay: string
@@ -17,6 +26,7 @@ export interface SampleTrip {
   days: { day: number; date: string; title: string; stops: {
     period: string; title: string; description: string; allowance?: string; optional?: boolean
     mapQuery?: string
+    photo?: SamplePhoto
     journey?: { origin: string; destination: string }
   }[] }[]
   conversation: { role: string; content: string }[]

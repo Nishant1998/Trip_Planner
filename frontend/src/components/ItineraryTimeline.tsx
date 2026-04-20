@@ -77,7 +77,8 @@ export default function ItineraryTimeline({ plan, active }: { plan: NormalizedPl
 
                 <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-xs hover:border-indigo-200 transition flex gap-3.5 items-start print:border-slate-300">
                   {act.hasPlace !== false && <PlaceImage src={act.imageUrl} name={act.title}
-                    className="w-16 h-16 sm:w-20 sm:h-20" />}
+                                  className="w-16 h-16 sm:w-20 sm:h-20" photoSourceUrl={act.photoSourceUrl}
+                                  photoCredit={act.photoCredits?.join(', ')} />}
 
                   <div className="flex-1 min-w-0">
                     <div className="flex flex-wrap items-center justify-between gap-2 mb-1">
@@ -97,7 +98,7 @@ export default function ItineraryTimeline({ plan, active }: { plan: NormalizedPl
                     <p className="text-xs text-slate-600 leading-relaxed mb-2">
                       {act.description}
                     </p>
-                    {act.imageUrl && Boolean(act.photoCredits?.length) && <p className="mb-2 text-[10px] leading-relaxed text-slate-500">
+                                  {act.imageUrl && !act.photoSourceUrl && Boolean(act.photoCredits?.length) && <p className="mb-2 text-[10px] leading-relaxed text-slate-500">
                       Photo: {act.photoCredits?.join(', ')} · Google Maps
                     </p>}
 
