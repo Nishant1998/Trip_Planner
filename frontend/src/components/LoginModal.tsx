@@ -33,10 +33,10 @@ const LoginModal: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25">
             <Compass className="w-5 h-5" />
           </div>
-          <span className="text-xl font-black text-slate-900 tracking-tight">Waypoint</span>
+          <span className="text-xl font-black text-slate-900 tracking-tight">TripAi</span>
         </div>
 
-        <h2 id="sign-in-title" className="text-lg font-black text-slate-900 mt-2">Sign in to Waypoint</h2>
+        <h2 id="sign-in-title" className="text-lg font-black text-slate-900 mt-2">Sign in to TripAi</h2>
         <p className="text-xs text-slate-500 mt-1 mb-5 leading-relaxed">
           {isTestMode
             ? 'Use the local test account to exercise trip planning without Google OAuth.'

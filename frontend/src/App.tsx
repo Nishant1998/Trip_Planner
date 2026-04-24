@@ -14,7 +14,7 @@ const App: React.FC = () => {
       </main>
       <footer className="text-center py-5 border-t border-slate-200 bg-white print:hidden">
         <p className="text-xs text-slate-500 font-medium">
-          <span className="font-semibold text-slate-700">Waypoint</span> • Intelligent travel planning made effortless.
+          <span className="font-semibold text-slate-700">TripAi</span> • Intelligent travel planning made effortless.
         </p>
       </footer>
       <LoginModal />

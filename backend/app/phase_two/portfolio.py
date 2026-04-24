@@ -53,7 +53,7 @@ def render_plan(payload):
         notice += ' Saved source details need refreshing; place names and explanations are incomplete in this view.'
     critical = list(dict.fromkeys(w['message'] for w in view['warnings'] if w.get('severity') == 'error'))
     budget_label = f'{text(summary["currency"] or "")} {summary["budget"]:,.0f}' if summary['budget'] is not None else 'Not specified'
-    sections = [f'<header><p class="eyebrow">Waypoint · Your travel notebook</p><h1>{text(summary["title"])}</h1>',
+    sections = [f'<header><p class="eyebrow">TripAi · Your travel notebook</p><h1>{text(summary["title"])}</h1>',
         f'<p class="overview">{text(summary["overview"])}</p>',
         f'<div class="trip-facts"><span>{text(summary["start_date"])} → {text(summary["end_date"])}</span><span>{len(view["days"])} days · {text(summary["adults"])} adults · {text(summary["children"])} children</span><span>Budget target: {budget_label}</span></div>',
         f'<p class="banner">{notice}</p>',

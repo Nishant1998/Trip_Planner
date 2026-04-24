@@ -13,7 +13,7 @@ export const WaypointMark: React.FC<{ className?: string }> = ({ className = 'w-
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
-      aria-label="Waypoint Icon"
+      aria-label="TripAi icon"
     >
       <defs>
         <linearGradient id="wp-grad-primary" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -73,7 +73,7 @@ export const WaypointLogo: React.FC<WaypointLogoProps> = ({
           <span
             className={`${textSizes[size]} font-black text-slate-900 tracking-tight leading-none`}
           >
-            Waypoint
+            TripAi
           </span>
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 inline-block mb-0.5 animate-pulse" />
         </div>

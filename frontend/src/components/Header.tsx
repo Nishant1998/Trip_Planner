@@ -39,7 +39,7 @@ const Header: React.FC = () => {
           <div className="w-9 h-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/25 group-hover:scale-105 transition-transform">
             <Compass className="w-5 h-5" />
           </div>
-          <span className="text-2xl font-black text-gray-900 tracking-tight">Waypoint</span>
+          <span className="text-2xl font-black text-gray-900 tracking-tight">TripAi</span>
         </Link>
 
         {/* Navigation matching main website */}

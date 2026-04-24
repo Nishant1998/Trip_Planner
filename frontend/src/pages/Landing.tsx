@@ -162,7 +162,7 @@ const Landing: React.FC = () => {
           <div className="text-center max-w-3xl mx-auto mb-14">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider mb-3">
               <Compass className="w-3.5 h-3.5 text-indigo-600" />
-              <span>How Waypoint Works</span>
+              <span>How TripAi Works</span>
             </div>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight">
               From a conversation to a clearer trip plan
@@ -261,7 +261,7 @@ const Landing: React.FC = () => {
             </h2>
 
             <p className="text-slate-400 text-sm sm:text-base leading-relaxed mb-8">
-              Start with a single sentence. Waypoint helps organise your requirements into a day-by-day draft.
+              Start with a single sentence. TripAi helps organise your requirements into a day-by-day draft.
             </p>
 
             <div className="flex items-center justify-center">
