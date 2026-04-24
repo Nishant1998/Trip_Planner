@@ -1,4 +1,4 @@
-"""Bounded, cached current-facts lookup for explicit Phase 1 advice questions."""
+"""Bounded, cached current-facts lookup for explicit trip-detail collection advice questions."""
 
 from __future__ import annotations
 

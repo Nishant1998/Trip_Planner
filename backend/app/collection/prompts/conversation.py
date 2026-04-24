@@ -1,4 +1,4 @@
-"""Lean system and task prompts for Phase 1's conversation agent."""
+"""Lean system and task prompts for trip-detail collection's conversation agent."""
 
 from __future__ import annotations
 

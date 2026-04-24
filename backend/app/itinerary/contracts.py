@@ -1,4 +1,4 @@
-"""Versioned public plan and bounded shared-state records for Phase 2.
+"""Versioned public plan and bounded shared-state records for itinerary planning.
 
 All provider facts may be unknown. A complete JSON shape does not imply that
 every booking price, timetable, opening period, or route is verified.
@@ -55,7 +55,7 @@ class PlanWarning(BaseModel):
 
 
 class TripRequest(BaseModel):
-    """Read-only normalized view plus an immutable serialized Phase 1 snapshot."""
+    """Read-only normalized view plus an immutable serialized trip-detail collection snapshot."""
 
     model_config = ConfigDict(frozen=True)
     preferences: OptionalFieldValues = Field(default_factory=OptionalFieldValues)

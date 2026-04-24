@@ -1,4 +1,4 @@
-"""Convert a confirmed Phase 1 memory to immutable Phase 2 input."""
+"""Convert a confirmed trip-detail collection memory to immutable itinerary planning input."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ def request_from_confirmed_memory(
     memory: TripMemory, *, trip_id: int, snapshot_id: str
 ) -> TripRequest:
     if memory.metadata.status is not TripStatus.CONFIRMED:
-        raise ValueError("Phase 2 requires a confirmed Phase 1 memory")
+        raise ValueError("itinerary planning requires a confirmed trip-detail collection memory")
     needed = memory.needed
     if not (
         needed.origin

@@ -1,4 +1,4 @@
-"""Typed, agent-independent tools for the new Phase 2 planner."""
+"""Typed, agent-independent tools for the new itinerary planning planner."""
 
 from .contracts import ToolResult, ToolStatus
 from .places import PlacesTools

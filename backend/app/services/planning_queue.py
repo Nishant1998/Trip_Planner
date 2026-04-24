@@ -1,4 +1,4 @@
-"""Small durable queue adapter for Phase 2 planner jobs.
+"""Small durable queue adapter for itinerary planning planner jobs.
 
 Postgres remains the source of truth. Redis only wakes a worker quickly; if it
 is unavailable, workers safely find queued jobs through their periodic database

@@ -331,7 +331,7 @@ class TripRepository(ABC):
         payload: JsonObject,
         fingerprint: str,
     ) -> ConfirmedTripSnapshotRow:
-        """Save or return the current immutable Phase 1 planning input."""
+        """Save or return the current immutable trip-detail collection planning input."""
 
         ...
 

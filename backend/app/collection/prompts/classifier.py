@@ -1,4 +1,4 @@
-"""Lean semantic routing prompt used before Phase 1 extraction."""
+"""Lean semantic routing prompt used before trip-detail collection extraction."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Production FastAPI application for Trip Planner AI."""
+"""FastAPI application for TripAi."""
 
 from __future__ import annotations
 
@@ -19,8 +19,8 @@ from app.collection.runtime import CollectionRuntimeService
 from app.config import ENV_FILE, Settings
 from app.db.factory import build_trip_repository
 from app.db.repository import TripRepository
-from app.phase_two.api import register_planning_routes
-from app.phase_two.service import PlanningService
+from app.itinerary.api import register_planning_routes
+from app.itinerary.service import PlanningService
 from app.services.events import TripEventBus
 from app.services.logging import configure_logging
 from fastapi import APIRouter, FastAPI
@@ -103,8 +103,8 @@ def create_app(
             await planning.close()
 
     app = FastAPI(
-        title="Trip Planner AI API",
-        description="Production REST API for trip-detail collection",
+        title="TripAi API",
+        description="Trip-detail collection and itinerary planning",
         version="1.0.0",
         lifespan=lifespan,
     )

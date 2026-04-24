@@ -1071,7 +1071,7 @@ class TripOrchestrator:
         previous_status: TripStatus,
         publisher: Publisher | None,
     ) -> TurnOutcome:
-        """Apply defaults and finalize the Phase 1 trip-detail collection."""
+        """Apply defaults and finalize the trip-detail collection trip-detail collection."""
 
         readiness = assess_collection_readiness(memory)
         pending = memory.internal.pending_clarification
@@ -1255,7 +1255,7 @@ class TripOrchestrator:
             update={"extracted_fields": normalized_fields}
         )
 
-        # ── Phase 1: validate ─────────────────────────────────────────────
+        # ── Validation: validate ─────────────────────────────────────────────
 
         # Runs invariant checks and logs warnings without blocking field writes, so date inconsistencies are visible in logs before recomputation.
         invariant_warnings = run_invariant_checks(extraction, memory)
@@ -1302,7 +1302,7 @@ class TripOrchestrator:
             *place_failures,
         ]
 
-        # ── Phase 2: write valid fields to memory ─────────────────────────
+        # ── Persistence: write valid fields to memory ─────────────────────────
 
         changed_fields: list[str] = []
 

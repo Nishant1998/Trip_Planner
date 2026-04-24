@@ -19,7 +19,7 @@ from app.config import Settings
 from app.db.factory import build_trip_repository
 from app.models.enums import TripStatus
 from app.models.state import load_runtime_memory
-from app.phase_two.service import PlanningService
+from app.itinerary.service import PlanningService
 from app.services.events import TripEventBus
 from psycopg.types.json import Json
 from scripts.sample_export import export_sample, write_json, write_manifest

@@ -444,7 +444,7 @@ class InternalFields(BaseModel):
     profile_signals: list[str] = Field(default_factory=list)
     trip_context_notes: list[str] = Field(default_factory=list)
     # The extraction agent's original duration wording (for example
-    # "5 nights") is display-only. Phase 2 continues to receive the canonical
+    # "5 nights") is display-only. itinerary planning continues to receive the canonical
     # calendar-day count in ``trip_duration_days``.
     duration_display_label: str | None = None
     data_confidence: DataConfidence | None = None

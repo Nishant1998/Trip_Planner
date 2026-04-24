@@ -1,4 +1,4 @@
-"""Six approved Phase 2 agent templates.
+"""Six approved itinerary planning agent templates.
 
 Role instances bind to one run-local SixAgentRuntime, which enforces prompts,
 typed outputs, evidence selection, and tool permissions.

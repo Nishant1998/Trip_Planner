@@ -1,4 +1,4 @@
-"""Tavily-backed current-facts research for the Phase 2 planner.
+"""Tavily-backed current-facts research for the itinerary planning planner.
 
 Tavily supplies web results. OpenAI only transforms supplied snippets into the
 existing structured evidence contract; it never receives a web-search tool.

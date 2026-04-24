@@ -613,7 +613,7 @@ const CreateTrip: React.FC = () => {
 
   // Poll background job when solver is running
   useEffect(() => {
-    // Phase 1 does not create a planning job. Polling it here was repeatedly
+    // trip-detail collection does not create a planning job. Polling it here was repeatedly
     // calling the protected endpoint before authentication (and for every
     // collecting trip), which flooded the backend with 401 responses.
     if (!tripId || !isAuthenticated || !shouldPollTrip(trip?.status, job?.status, busy)) return
@@ -774,7 +774,7 @@ const CreateTrip: React.FC = () => {
     }
   }
 
-  // Trigger Phase 2 Autonomous Planning Solver
+  // Trigger itinerary planning Autonomous Planning Solver
   const triggerPlanning = async () => {
     if (!tripId || busy) return
     if (!isAuthenticated) {

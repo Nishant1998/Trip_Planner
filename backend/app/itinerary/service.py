@@ -1,4 +1,4 @@
-"""Feature-gated Phase 1 confirmation -> six-agent job -> saved plan."""
+"""Feature-gated trip-detail collection confirmation -> six-agent job -> saved plan."""
 
 import asyncio
 import hashlib
@@ -59,7 +59,9 @@ class PlanningService:
         self.enabled = (
             enabled
             if enabled is not None
-            else os.getenv("PHASE_TWO_ENABLED", "false").lower() == "true"
+            else os.getenv(
+                "PLANNING_ENABLED", os.getenv("PHASE_TWO_ENABLED", "false")
+            ).lower() == "true"
         )
         self.model_factory = model_factory or self._model
         self.catalog_factory = catalog_factory or PlanningToolCatalog.from_local_env
@@ -97,7 +99,7 @@ class PlanningService:
                 'status': 'failed', 'code': 'planning_start_failed', 'message': exc.detail,
             })
             return {'status': 'failed', 'message': exc.detail}
-        except Exception:  # noqa: BLE001 - isolate planning failure from successful Phase 1 confirmation
+        except Exception:  # noqa: BLE001 - isolate planning failure from successful trip-detail collection confirmation
             logger.exception("Planning admission failed", extra={"trip_id": trip_id})
             # Collection confirmation remains successful even if planning admission fails.
             await self.event_bus.publish(

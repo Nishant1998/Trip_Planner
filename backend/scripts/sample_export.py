@@ -5,9 +5,9 @@ from datetime import UTC, datetime, timedelta
 import json
 from pathlib import Path
 
-from app.phase_two.persistence import durable_plan
-from app.phase_two.portfolio import render_plan
-from app.phase_two.runtime import json_value
+from app.itinerary.persistence import durable_plan
+from app.itinerary.portfolio import render_plan
+from app.itinerary.runtime import json_value
 
 
 def anonymous_plan(plan, sample_id):

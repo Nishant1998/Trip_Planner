@@ -1,4 +1,4 @@
-"""Phase 2 LangGraph planner for confirmed Phase 1 trip memories."""
+"""itinerary planning LangGraph planner for confirmed trip-detail collection trip memories."""
 
 from .contracts import TripPlanV2, TripRequest, TripState
 from .input_adapter import request_from_confirmed_memory

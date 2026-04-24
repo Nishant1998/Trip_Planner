@@ -45,7 +45,7 @@ class TripEventBus:
         async with self._lock:
             self._prune_inactive_locked()
             # A trip can be initialized before the UI has navigated to its slug.
-            # Replay the current Phase 1 status to that late SSE subscriber.
+            # Replay the current trip-detail collection status to that late SSE subscriber.
             latest_status = self._latest_status.get(trip_id)
             if latest_status:
                 queue.put_nowait(latest_status)

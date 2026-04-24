@@ -1,4 +1,4 @@
-"""All Phase 1 agent builders, grouped by the collection workflow."""
+"""All trip-detail collection agent builders, grouped by the collection workflow."""
 
 from __future__ import annotations
 

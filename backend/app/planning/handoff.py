@@ -1,4 +1,4 @@
-"""Create the immutable Phase 1 payload consumed by Phase 2."""
+"""Create the immutable trip-detail collection payload consumed by itinerary planning."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ def build_confirmed_snapshot(memory: TripMemory) -> tuple[JsonObject, str]:
 
     The payload is intentionally detached from live ``TripMemory``.  Later
     profile or metadata work may update current trip state, but it cannot
-    mutate the already-approved Phase 2 input.
+    mutate the already-approved itinerary planning input.
     """
 
     payload = json.loads(serialize_runtime_memory(memory))

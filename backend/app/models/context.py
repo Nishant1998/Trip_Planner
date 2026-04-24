@@ -117,7 +117,7 @@ class PlanningContext(BaseModel):
     def planning_input_groups(self) -> dict[str, object]:
         """Separate confirmed non-negotiables from preferences for planning agents.
 
-        Phase 1 has already obtained user approval.  These groups therefore do
+        trip-detail collection has already obtained user approval.  These groups therefore do
         not invite the planner to reinterpret the trip; they make explicit
         which approved values it must preserve and which values can guide a
         choice between otherwise feasible itinerary options.

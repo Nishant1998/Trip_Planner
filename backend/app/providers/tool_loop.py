@@ -136,7 +136,7 @@ class OpenAIResponsesToolModel:
                 "input": next_input,
                 "previous_response_id": previous_response_id,
                 "text_format": output_model,
-                # Phase 2 already keeps factual feasibility in deterministic
+                # itinerary planning already keeps factual feasibility in deterministic
                 # Python.  Ranking benefits from a little reasoning, while a
                 # read-only critic should be fast and decisive.
                 "reasoning": {"effort": _reasoning_effort(agent_name)},
