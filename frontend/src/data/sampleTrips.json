@@ -2,7 +2,6 @@
   {
     "id": "jaipur-heritage",
     "destination": "Jaipur",
-    "cover": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Amber_fort_top_view.jpg/960px-Amber_fort_top_view.jpg",
     "overview": "Two easy-paced days around Jaipur’s forts and palace quarter, with vegetarian meals, taxi journeys and proper rest breaks. Amber Fort and City Palace remain the anchors; the optional stops have been reduced to keep the second day comfortable.",
     "transport": "Use app-based taxis for longer journeys and short walks within the palace quarter. Start near Raj Mandir Cinema at 9 am on 14 November, and remain in Jaipur until after 7 pm on 15 November. Check taxi availability and live journey times before leaving.",
     "stay": "One night in a clean mid-range hotel in central Jaipur. No property or room availability is confirmed; choose a hotel and check luggage storage before travelling.",
@@ -111,6 +110,7 @@
         ]
       }
     ],
+    "cover": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Amber_fort_top_view.jpg/960px-Amber_fort_top_view.jpg",
     "coverPhoto": {
       "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/Amber_fort_top_view.jpg/960px-Amber_fort_top_view.jpg",
       "source": "https://commons.wikimedia.org/wiki/File:Amber_fort_top_view.jpg",
@@ -170,7 +170,6 @@
   {
     "id": "lonavala-family",
     "destination": "Lonavala",
-    "cover": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Tiger_Point_Lonavala.jpg/960px-Tiger_Point_Lonavala.jpg",
     "overview": "A two-day family break from Kharghar with your own car, one child-friendly stop each day, vegetarian meals and downtime. The return journey is explicitly included, with a generous afternoon buffer rather than a promised arrival time.",
     "transport": "Outbound: Kharghar, Navi Mumbai → Lonavala, leaving at 8 am on 14 November. Return: Lonavala → Kharghar, Navi Mumbai on 15 November. Aim to leave Lonavala around 2 pm; check live traffic and leave earlier if needed to meet the 8 pm home deadline. This is a planning buffer, not a verified travel-time forecast.",
     "stay": "One night in a clean mid-range family hotel in Lonavala. Confirm room availability, child policy, parking and check-in times directly before booking.",
@@ -265,6 +264,7 @@
         ]
       }
     ],
+    "cover": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Tiger_Point_Lonavala.jpg/960px-Tiger_Point_Lonavala.jpg",
     "coverPhoto": {
       "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/34/Tiger_Point_Lonavala.jpg/960px-Tiger_Point_Lonavala.jpg",
       "source": "https://commons.wikimedia.org/wiki/File:Tiger_Point_Lonavala.jpg",
@@ -324,7 +324,6 @@
   {
     "id": "paris-culture",
     "destination": "Paris",
-    "cover": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/EiffelTowerdayshootbyedwintan.jpg/960px-EiffelTowerdayshootbyedwintan.jpg",
     "overview": "Three relaxed days of art and architecture in Paris, with the Louvre and Eiffel Tower as the main experiences. The generated day order is retained, with short walks, metro journeys, vegetarian meals and time to rest.",
     "transport": "Use the metro for longer local journeys, short walks between nearby stops, and taxis when needed. Start at Place Saint-Michel at 9 am on 16 November. On 18 November, return to Place Saint-Michel after the final museum visit and keep your remaining time free until your onward arrangements after 7 pm. Local journey times are not verified.",
     "stay": "Two nights in a clean mid-range hotel in central Paris. No hotel or booking is confirmed; check rates, room availability and luggage storage independently.",
@@ -473,6 +472,7 @@
         ]
       }
     ],
+    "cover": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/EiffelTowerdayshootbyedwintan.jpg/960px-EiffelTowerdayshootbyedwintan.jpg",
     "coverPhoto": {
       "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/EiffelTowerdayshootbyedwintan.jpg/960px-EiffelTowerdayshootbyedwintan.jpg",
       "source": "https://commons.wikimedia.org/wiki/File:EiffelTowerdayshootbyedwintan.jpg",

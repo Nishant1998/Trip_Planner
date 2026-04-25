@@ -1,0 +1,92 @@
+{
+  "jaipur-heritage": [
+    {
+      "role": "user",
+      "content": "Origin city: Jaipur, India. Plan a relaxed two-day Jaipur trip for two adults on 14–15 November 2026. Start at Raj Mandir Cinema near MI Road at 9 am on the 14th, and finish in Jaipur after 7 pm on the 15th. No flights or intercity travel. Our total budget is INR 18,000 including one hotel night, meals, local transport and tickets. We like history and architecture; Amber Fort and City Palace are must-sees. Ask any missing details, then show a summary for approval before planning."
+    },
+    {
+      "role": "assistant",
+      "content": "Since you’re staying within Jaipur and have ruled out flights and intercity travel, long-distance transport doesn’t apply. For a relaxed heritage trip, would you like to share how you’d prefer to get around the city and between the sights?"
+    },
+    {
+      "role": "user",
+      "content": "Use app-based taxis for long journeys and short walks nearby. We eat vegetarian food, have no allergies, and want a clean mid-range hotel near central Jaipur. Keep lunch and rest breaks, group nearby sights, and avoid long walks. Finish in Jaipur. Show the summary before planning."
+    },
+    {
+      "role": "user",
+      "content": "Increase our total budget to INR 20,000. Keep all other details unchanged and show the updated summary before planning."
+    },
+    {
+      "role": "assistant",
+      "content": "Here’s the trip I’ll plan:\nRoute: Jaipur, India → Jaipur\nDates: 2026-11-14 to 2026-11-15 (2 days)\nTravellers: 2 adult(s)\nTotal budget: 20,000 INR\nFinish in Jaipur\nPace: relaxed\nGetting around: taxi, walking\nInterests: history, architecture\nMust-see: Amber Fort, City Palace\nFood preferences: vegetarian\nDietary restrictions: vegetarian\nHotel comfort: mid range\nAccommodation: hotel\nAvoid: long walks\nImportant notes:\n• Start at Raj Mandir Cinema near MI Road at 09:00 on 2026-11-14.\n• Finish in Jaipur after 19:00 on 2026-11-15.\n• No flights or intercity travel.\n• The total budget includes one hotel night, meals, local transport and tickets.\n• Prefer a clean hotel near central Jaipur.\n• Keep lunch and rest breaks in the itinerary.\n• The trip finishes in Jaipur.\n• Keep lunch and rest breaks, and group nearby sights.\nDoes this look right? Reply yes to start planning, or tell me what you’d like to change."
+    },
+    {
+      "role": "user",
+      "content": "Yes, the latest summary is correct. Start planning."
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! Your trip details are confirmed and saved."
+    }
+  ],
+  "lonavala-family": [
+    {
+      "role": "user",
+      "content": "Plan a relaxed family road trip from Kharghar, Navi Mumbai to Lonavala on 14–15 November 2026. We are two adults and one child aged eight. Leave home at 8 am on the 14th and be home by 8 pm on the 15th. Budget INR 22,000 total for one hotel night, travel, meals and activities. We enjoy gardens and scenic viewpoints; Ryewood Park and Tiger Point are our must-sees. Please collect missing details and show a summary before planning."
+    },
+    {
+      "role": "assistant",
+      "content": "Kharghar, Navi Mumbai is your confirmed starting point, but the return location still needs your confirmation before I save it. Is the return location also Kharghar, Navi Mumbai?"
+    },
+    {
+      "role": "user",
+      "content": "We will use our own car throughout; include fuel, tolls and parking. Vegetarian meals, no allergies. A clean mid-range family hotel in Lonavala, relaxed pace, lunch breaks and afternoon rest. Avoid strenuous treks, steep climbs and late-night driving. Finish back in Kharghar. Show the trip summary before planning."
+    },
+    {
+      "role": "user",
+      "content": "Set the total budget to INR 25,000 and keep the child-friendly pace and the 8 pm return deadline. Show the updated summary before starting."
+    },
+    {
+      "role": "assistant",
+      "content": "Here’s the trip I’ll plan:\nRoute: Kharghar, Navi Mumbai → Lonavala\nDates: 2026-11-14 to 2026-11-15 (2 days)\nTravellers: 2 adult(s), 1 child(ren)\nTotal budget: 25,000 INR\nFinish in Kharghar\nPace: relaxed\nTravel: own car (self-drive)\nInterests: gardens, scenic viewpoints\nMust-see: Ryewood Park, Tiger Point\nFood preferences: vegetarian\nOther dietary restrictions: none stated\nHotel comfort: mid range\nAccommodation: hotel\nAvoid: strenuous treks; steep climbs; late-night driving\nImportant notes:\n• Leave Kharghar, Navi Mumbai at 8:00 on 2026-11-14 and be home in Kharghar, Navi Mumbai by 20:00 on 2026-11-15.\n• The total budget includes one hotel night, travel, meals and activities.\n• The total budget includes fuel, tolls and parking.\n• Prefer lunch breaks and afternoon rest.\n• Prefer a clean family hotel.\nDoes this look right? Reply yes to start planning, or tell me what you’d like to change."
+    },
+    {
+      "role": "user",
+      "content": "Yes, the latest summary is correct. Start planning."
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! Your trip details are confirmed and saved."
+    }
+  ],
+  "paris-culture": [
+    {
+      "role": "user",
+      "content": "Origin city: Paris, France. Plan a relaxed three-day Paris trip for two adults on 16–18 November 2026. Start at Place Saint-Michel in central Paris at 9 am on the 16th and finish in Paris after 7 pm on the 18th. No flights or travel to Paris. Budget EUR 1,000 total for two hotel nights, meals, tickets and local transport. We enjoy art, architecture and neighbourhood walks. The Louvre and Eiffel Tower are must-sees. Ask for missing preferences and show the summary before planning."
+    },
+    {
+      "role": "assistant",
+      "content": "For a Paris-only stay, you won’t need transport between cities; the metro, walking and occasional taxis should cover getting around. With the Louvre and Eiffel Tower already fixed, is there anything else you’d especially like included, such as food, river views or live music?"
+    },
+    {
+      "role": "user",
+      "content": "Use the metro where practical, short neighbourhood walks and taxis only if needed. Vegetarian meals and no allergies. A clean mid-range hotel in central Paris. Keep lunch and rest breaks and avoid rushing or long walks. Finish in central Paris. Place museum visits on suitable opening days, and label any booking or opening-hour detail that needs confirmation. Show the summary before planning."
+    },
+    {
+      "role": "user",
+      "content": "Increase the total budget to EUR 1,100, keeping everything else unchanged. Show the updated summary before planning."
+    },
+    {
+      "role": "assistant",
+      "content": "Here’s the trip I’ll plan:\nSightseeing in Paris\nDates: 2026-11-16 to 2026-11-18 (3 days)\nTravellers: 2 adult(s)\nTotal budget: 1,100 EUR\nFinish in Place Saint-Michel, Paris\nPace: relaxed\nGetting around: public transport, walking, taxi\nInterests: art, architecture, neighbourhood walks\nMust-see: The Louvre, Eiffel Tower\nFood preferences: vegetarian\nOther dietary restrictions: none stated\nHotel comfort: mid range\nAccommodation: hotel\nAvoid: long walks; rushing\nImportant notes:\n• Start at Place Saint-Michel in central Paris at 09:00 on 2026-11-16.\n• Finish in Paris after 19:00 on 2026-11-18.\n• No flights or travel to Paris.\n• The total budget includes two hotel nights, meals, tickets and local transport.\n• Prefer a clean central Paris hotel.\n• Keep lunch and rest breaks in the itinerary.\n• Prefer a clean mid-range hotel in central Paris.\n• Schedule museum visits on suitable opening days and flag booking or opening-hour details that need confirmation.\n• Available from 9:00 am on November 16 until after 7:00 pm on November 18, starting and finishing at Place Saint-Michel in central Paris.\n• The total budget includes two mid-range hotel nights, vegetarian meals, tickets and local transport.\n• No flights or intercity travel.\n• The total budget covers two mid-range hotel nights, vegetarian meals, tickets and local transport.\nDoes this look right? Reply yes to start planning, or tell me what you’d like to change."
+    },
+    {
+      "role": "user",
+      "content": "Yes, the latest summary is correct. Start planning."
+    },
+    {
+      "role": "assistant",
+      "content": "Perfect! Your trip details are confirmed and saved."
+    }
+  ]
+}

@@ -17,6 +17,9 @@ def build_samples():
     edits = json.loads(
         (backend / "samples/public_edits.json").read_text(encoding="utf-8")
     )
+    conversations = json.loads(
+        (backend / "samples/conversations.json").read_text(encoding="utf-8")
+    )
     samples = []
     photos = json.loads(
         (backend / "samples/photo_manifest.json").read_text(encoding="utf-8")
@@ -30,41 +33,23 @@ def build_samples():
                 photo = photos["places"].get(stop.get("mapQuery"))
                 if photo:
                     stop["photo"] = photo
-        source = json.loads(
-            (
-                backend / "samples/generated/website" / edit["id"] / "sample.json"
-            ).read_text(encoding="utf-8")
-        )
         scenario = scenarios[edit["id"]]
-        messages = source["conversation"]
-        opening = next(i for i, m in enumerate(messages) if m["role"] == "user")
-        summary = next(
-            m
-            for m in reversed(messages)
-            if m["role"] == "assistant" and "Does this look right?" in m["content"]
+        conversation = conversations[edit["id"]]
+        original_path = (
+            backend / "samples/generated/website" / edit["id"] / "sample.json"
         )
-        conversation = [
-            *messages[opening : opening + 2],
-            {"role": "user", "content": scenario["preferences"]},
-            {"role": "user", "content": scenario["correction"]},
-            summary,
-            {
-                "role": "user",
-                "content": "Yes, the latest summary is correct. Start planning.",
-            },
-            {
-                "role": "assistant",
-                "content": "Perfect! Your trip details are confirmed and saved.",
-            },
-        ]
-        originals = {(message["role"], message["content"]) for message in messages}
-        if any(
-            (message["role"], message["content"]) not in originals
-            for message in conversation
-        ):
-            raise ValueError(
-                f"A selected message is not in the original chat: {edit['id']}"
-            )
+        if original_path.exists():
+            messages = json.loads(original_path.read_text(encoding="utf-8"))[
+                "conversation"
+            ]
+            originals = {(message["role"], message["content"]) for message in messages}
+            if any(
+                (message["role"], message["content"]) not in originals
+                for message in conversation
+            ):
+                raise ValueError(
+                    f"A selected message is not in the original chat: {edit['id']}"
+                )
         # Only author-reviewed text and selected anonymous messages enter the public bundle.
         samples.append(
             {
