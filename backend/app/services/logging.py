@@ -12,7 +12,7 @@ from pathlib import Path
 
 from app.services.failure import sanitize_message
 
-BACKEND_DIR = Path(__file__).resolve().parents[1]
+BACKEND_DIR = Path(__file__).resolve().parents[2]
 _VALID_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 request_id_context: ContextVar[str] = ContextVar("request_id", default="-")
 
@@ -83,7 +83,7 @@ def _file_handler(formatter: logging.Formatter) -> logging.Handler | None:
         else BACKEND_DIR / configured_directory
     ).resolve()
     if not directory.is_relative_to(BACKEND_DIR):
-        raise ValueError("LOG_DIRECTORY must stay inside backend_code")
+        raise ValueError("LOG_DIRECTORY must stay inside the backend directory")
     directory.mkdir(parents=True, exist_ok=True)
     filename = os.getenv("LOG_FILE_NAME", "trip-planner.jsonl").strip()
     if not filename or Path(filename).name != filename:

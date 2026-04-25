@@ -4,7 +4,7 @@ from datetime import UTC, time
 
 from app.models.progress import PlanningStage
 from app.planning_tools.calculator import CalculatorInput, calculate
-from app.planning_tools.contracts import Place, RouteLeg, TransportOption
+from app.planning_tools.contracts import RouteLeg, TransportOption
 from app.planning_tools.route_optimizer import optimize_route
 from app.providers.tool_loop import AgentTool
 from pydantic import BaseModel, ConfigDict
