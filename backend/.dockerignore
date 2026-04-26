@@ -1,0 +1,13 @@
+*
+!requirements.lock
+!app/
+!app/**
+!scripts/
+!scripts/**
+!samples/
+!samples/**
+**/__pycache__
+**/*.pyc
+**/.env*
+samples/generated
+runtime

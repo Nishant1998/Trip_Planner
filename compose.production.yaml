@@ -1,0 +1,12 @@
+# Apply only on the chosen server, after DNS and secrets are configured.
+services:
+  backend:
+    environment:
+      CORS_ORIGINS: ${PUBLIC_ORIGIN:?Set the HTTPS website origin}
+  web:
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:?Set the website domain for automatic HTTPS}
+    ports: !override
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"

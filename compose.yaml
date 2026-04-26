@@ -1,0 +1,55 @@
+services:
+  backend:
+    build: ./backend
+    image: tripai-backend:${IMAGE_TAG:-local}
+    env_file:
+      - ${BACKEND_ENV_FILE:-deploy/backend.env}
+    environment:
+      APP_ENV: production
+      RIYA_AUTH_MODE: google
+      TEST_MODE: "false"
+      PLANNER_MODE: live
+      RIYA_AUTO_MIGRATE: "false"
+      GOOGLE_OAUTH_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:?Set the public Google client ID}
+      CORS_ORIGINS: ${PUBLIC_ORIGIN:-http://localhost:8080}
+      LOG_FILE_ENABLED: "false"
+    init: true
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+      - /home/tripai/.cache:size=32m,uid=10001,gid=10001
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 45s
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+    networks: [app]
+  web:
+    build:
+      context: ./frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${GOOGLE_OAUTH_CLIENT_ID:?Set the public Google client ID}
+    image: tripai-web:${IMAGE_TAG:-local}
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-:80}
+    ports:
+      - "127.0.0.1:${HTTP_PORT:-8080}:80"
+    depends_on:
+      backend: {condition: service_healthy}
+    restart: unless-stopped
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    security_opt: [no-new-privileges:true]
+    stop_grace_period: 15s
+    logging:
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+    networks: [app]
+networks:
+  app:
+volumes:
+  caddy_data:
+  caddy_config:
