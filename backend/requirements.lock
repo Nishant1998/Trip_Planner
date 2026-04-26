@@ -101,7 +101,9 @@ langgraph-prebuilt==1.1.0
 langgraph-sdk==0.4.6
     # via langgraph
 langsmith==0.14.7
-    # via langchain-core
+    # via
+    #   -r requirements.txt
+    #   langchain-core
 logfire-api==5.1.1
     # via pydantic-graph
 numpy==2.4.6

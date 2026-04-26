@@ -42,6 +42,15 @@ class JsonFormatter(logging.Formatter):
             "destination_id",
             "provider_mode",
             "departure_time",
+            "trace_id",
+            "entry_point",
+            "operation",
+            "role",
+            "agent_name",
+            "model_name",
+            "tool_name",
+            "input_tokens",
+            "output_tokens",
         ):
             if hasattr(record, key):
                 data[key] = getattr(record, key)

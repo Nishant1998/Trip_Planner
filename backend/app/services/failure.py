@@ -119,6 +119,7 @@ def _redacted_match(match: re.Match[str]) -> str:
 _SECRET_PATTERNS = (
     re.compile(r"(?P<prefix>\bBearer\s+)[^\s,;]+", re.IGNORECASE),
     re.compile(r"\b(?:sk-|gsk_)[A-Za-z0-9_-]{10,}"),
+    re.compile(r"\blsv2_[A-Za-z0-9_-]{10,}"),
     re.compile(r"\beyJ[A-Za-z0-9._=-]{20,}"),
     re.compile(
         r"(?P<prefix>\b(?:api[_-]?key|token|secret)\s*[:=]\s*)[^\s,;]+",

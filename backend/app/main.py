@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -23,6 +24,7 @@ from app.itinerary.api import register_planning_routes
 from app.itinerary.service import PlanningService
 from app.services.events import TripEventBus
 from app.services.logging import configure_logging
+from app.services.tracing import close_tracing, configure_tracing
 from fastapi import APIRouter, FastAPI
 
 
@@ -49,6 +51,7 @@ def create_app(
     planning = PlanningService(repository, event_bus, planning_profile="daywise")
 
     configure_logging()
+    configure_tracing()
 
     # --- Collection services ---
     runtime = CollectionRuntimeService(
@@ -101,6 +104,7 @@ def create_app(
         finally:
             await runtime.close()
             await planning.close()
+            await asyncio.to_thread(close_tracing)
 
     app = FastAPI(
         title="TripAi API",

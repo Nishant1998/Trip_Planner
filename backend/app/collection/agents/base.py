@@ -18,6 +18,7 @@ from app.services.llm_usage import (
     ensure_current_trip_can_start_model_call,
 )
 from app.services.agent_timing import record_current_agent_timing
+from app.services.tracing import observed, trace_metadata
 
 T = TypeVar("T")
 StreamTextCallback = Callable[[str], Awaitable[None]]
@@ -55,6 +56,7 @@ class PydanticAgentRunner(Generic[T]):
         self.model_name = model_name
         self.agent = agent
 
+    @observed("collection.agent", run_type="llm", attributes=("agent_name", "model_name"))
     async def run(self, prompt: str) -> T:
         """Run the wrapped agent and return only its structured output."""
 
@@ -63,6 +65,7 @@ class PydanticAgentRunner(Generic[T]):
         try:
             ensure_current_trip_can_start_model_call()
             result = await self.agent.run(prompt)
+            _trace_usage(result)
             record_current_llm_usage(
                 self.agent_name,
                 self.model_name,
@@ -108,6 +111,7 @@ class PydanticAgentRunner(Generic[T]):
         )
         return result.output
 
+    @observed("collection.agent.stream", run_type="llm", attributes=("agent_name", "model_name"))
     async def run_stream_field(
         self,
         prompt: str,
@@ -136,6 +140,7 @@ class PydanticAgentRunner(Generic[T]):
                         await on_text(current_text)
                         prev_text = current_text
                 final_output = await stream_result.get_output()
+                _trace_usage(stream_result)
                 record_current_llm_usage(
                     self.agent_name,
                     self.model_name,
@@ -219,6 +224,14 @@ def build_structured_agent_runner(
     return PydanticAgentRunner(agent_name, model_name, agent)
 
 
+def _trace_usage(result: Any) -> None:
+    usage = read_result_usage(result)
+    if usage is not None:
+        trace_metadata(input_tokens=getattr(usage, "input_tokens", 0),
+                       output_tokens=getattr(usage, "output_tokens", 0),
+                       requests=getattr(usage, "requests", 0))
+
+
 def _summarize_prompt(prompt: str, limit: int = 160) -> str:
     """Return a short single-line summary of one agent prompt."""
 
@@ -240,13 +253,16 @@ def _record_native_tool_usage(agent_name: str, result: Any, started_at: float) -
 
     messages_value = getattr(result, "all_messages", [])
     messages = messages_value() if callable(messages_value) else messages_value
+    count = 0
     for message in messages:
         calls_value = getattr(message, "native_tool_calls", [])
         calls = calls_value() if callable(calls_value) else calls_value
         for call, _return in calls:
+            count += 1
             record_current_tool_usage(
                 agent_name,
                 "openai",
                 str(getattr(call, "tool_name", "native_tool")),
                 duration_ms=int((perf_counter() - started_at) * 1000),
             )
+    trace_metadata(native_tool_calls=count)

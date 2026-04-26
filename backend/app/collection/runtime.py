@@ -26,6 +26,7 @@ from app.collection.turn_io import TurnOutcome
 from app.services.events import TripEventBus
 from app.services.agent_timing import record_trip_turn_timing
 from app.db.repository import TripRepository
+from app.services.tracing import observed, trace_failure
 
 logger = logging.getLogger(__name__)
 trace_logger = logging.getLogger("uvicorn.error")
@@ -292,6 +293,7 @@ class CollectionRuntimeService:
         self._active_tasks[trip_id] = task
         task.add_done_callback(lambda _: self._active_tasks.pop(trip_id, None))
 
+    @observed("collection.turn", root=True, fields=("trip_id",), entry_point="chat_api")
     async def _run_turn(self, trip_id: int, text: str, user_id: int) -> None:
         """Run one collection turn and stream updates to the frontend."""
 
@@ -346,6 +348,8 @@ class CollectionRuntimeService:
             failure_type = type(exc).__name__
             await self._publish_turn_failure(publisher, exc, trip_id=trip_id)
         finally:
+            if failure_type:
+                trace_failure(failure_type)
             record_trip_turn_timing(
                 user_id=user_id,
                 trip_id=trip_id,

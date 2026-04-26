@@ -23,6 +23,7 @@ from pydantic import BaseModel, ValidationError
 from app.models.agent import AgentUsage, ToolCallAudit
 from app.models.progress import PlanningStage
 from app.services.progress import ProgressReporter
+from app.services.tracing import observed, trace_failure, trace_metadata
 
 ToolHandler = Callable[[BaseModel], Awaitable[BaseModel | dict[str, Any] | list[Any]]]
 
@@ -193,6 +194,7 @@ class OpenAIResponsesToolModel:
     async def close(self) -> None:
         await self._client.close()
 
+    @observed("planning.model", run_type="llm", attributes=("model_name",))
     async def _parse_with_rate_limit_retry(
         self,
         *,
@@ -214,7 +216,11 @@ class OpenAIResponsesToolModel:
             try:
                 async with progress.track(stage):
                     self.requests_started += 1
-                    return await self._client.responses.parse(**request)
+                    response = await self._client.responses.parse(**request)
+                    usage = getattr(response, "usage", None)
+                    if usage is not None:
+                        trace_metadata(input_tokens=usage.input_tokens, output_tokens=usage.output_tokens)
+                    return response
             except ValidationError as error:
                 if any(item["type"] == "json_invalid" and "EOF" in item["msg"]
                        for item in error.errors(include_input=False, include_url=False)):
@@ -250,6 +256,7 @@ def _reasoning_effort(agent_name: str) -> str:
     }.get(agent_name, "low")
 
 
+@observed("planning.tool", run_type="tool", fields=("agent_name",))
 async def _invoke_tool(
     agent_name: str,
     call: Any,
@@ -260,6 +267,7 @@ async def _invoke_tool(
     started_at = datetime.now(UTC)
     started = perf_counter()
     name = str(call.name)
+    trace_metadata(tool_name=name if name in tools else "unknown_tool")
     raw: dict[str, object] = {}
     status = "ok"
     try:
@@ -271,12 +279,15 @@ async def _invoke_tool(
             result = await tool.handler(arguments)
         output = _json_result(result)
     except (KeyError, json.JSONDecodeError, ValidationError) as exc:
+        trace_failure(type(exc).__name__)
         status = "invalid_arguments"
         output = _json_error("invalid_arguments", str(exc))
     except AgentToolInputError as exc:
+        trace_failure(type(exc).__name__)
         status = "invalid_arguments"
         output = _json_error("tool_input_rejected", str(exc)[:500])
     except Exception as exc:
+        trace_failure(type(exc).__name__)
         status = "failed"
         output = _json_error("tool_failed", type(exc).__name__)
     return output, ToolCallAudit(

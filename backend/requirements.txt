@@ -11,6 +11,7 @@ genai-prices>=0.0.73,<0.1
 redis>=5.2,<6
 tenacity>=9.1,<10
 langgraph>=0.6,<2
+langsmith>=0.14.7,<0.15
 ortools>=9.15.6755,<10
 tqdm>=4.67,<5
 google-auth[requests]>=2.40,<3

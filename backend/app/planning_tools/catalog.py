@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 
 from dotenv import load_dotenv
 from pydantic import ValidationError
+from app.services.tracing import observed
 
 from .bookings import (
     FlightSearchTool,
@@ -64,6 +65,7 @@ class PlanningToolCatalog:
         Currency and scheduling/cost calculations remain internal helpers;
         optional news/events is omitted until explicitly enabled.
         """
+        @observed("provider.places", run_type="tool", tool_name="places", result_status=True)
         async def places(query):
             try:
                 validated = PlaceLookupInput.model_validate(query)
@@ -73,6 +75,7 @@ class PlanningToolCatalog:
                                   warnings=["Specify one valid Places action with its required fields."])
             return await self.run_guard.call("places", validated, self.places.lookup)
 
+        @observed("provider.maps", run_type="tool", tool_name="maps", result_status=True)
         async def maps(query):
             try:
                 validated = MapLookupInput.model_validate(query)
@@ -82,6 +85,7 @@ class PlanningToolCatalog:
                                   warnings=["Specify one valid Maps action with coordinates, mode, and a timezone-aware departure time if supplied."])
             return await self.run_guard.call("maps", validated, self.routes.lookup)
 
+        @observed("provider.weather", run_type="tool", tool_name="weather", result_status=True)
         async def weather(query):
             try:
                 validated = WeatherInput.model_validate(query)
@@ -91,6 +95,7 @@ class PlanningToolCatalog:
                                   warnings=["Weather input must contain valid coordinates and ordered dates spanning at most 31 days."])
             return await self.run_guard.call("weather", validated, self.weather.forecast)
 
+        @observed("provider.transport", run_type="tool", tool_name="transport", result_status=True)
         async def transport(query):
             try:
                 validated = TransportSearchInput.model_validate(query)
@@ -100,6 +105,7 @@ class PlanningToolCatalog:
                                   warnings=["Specify one valid flight or transit request with its required dates, travelers and mode fields."])
             return await self.run_guard.call("transport", validated, self.transport.search)
 
+        @observed("provider.accommodation", run_type="tool", tool_name="accommodation", result_status=True)
         async def accommodation(query):
             try:
                 validated = HotelSearchInput.model_validate(query)

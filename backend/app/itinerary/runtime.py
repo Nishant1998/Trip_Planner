@@ -24,6 +24,7 @@ from app.planning_tools.contracts import (
 )
 from app.providers.tool_loop import AgentTool, AgentToolInputError, ToolCallingModel
 from app.services.progress import ProgressReporter
+from app.services.tracing import observed
 from pydantic import BaseModel, ValidationError
 
 from .agent_io import (
@@ -294,6 +295,7 @@ class SixAgentRuntime:
         self.usage: list[dict] = []
         self.route_results: dict = {}
 
+    @observed("planning.agent", fields=("role",))
     async def invoke(self, role, state, **extra):
         spec = ROLE_SPECS[role]
         remaining = (state["run"].deadline_at - datetime.now(UTC)).total_seconds()
@@ -452,11 +454,13 @@ class SixAgentRuntime:
                 )
         return warnings
 
+    @observed("planning.supervisor", role="supervisor")
     async def supervisor(self, state, eligible):
         if len(eligible) == 1:
             return RoutingDecision(task=eligible[0], reason="Only one dependency-safe task remains.")
         return await self.invoke("supervisor", state, eligible_tasks=eligible)
 
+    @observed("planning.research", role="destination_research")
     async def research(self, state):
         output = await self.invoke("destination_research", state)
         found, weather = {}, []
@@ -561,6 +565,7 @@ class SixAgentRuntime:
             "warnings": warnings,
         }
 
+    @observed("planning.itinerary", role="itinerary_planning")
     async def itinerary(self, state, task):
         output = await self.invoke("itinerary_planning", state, task=task)
         days = []
@@ -638,6 +643,7 @@ class SixAgentRuntime:
                 update["journeys"] = journeys
         return update
 
+    @observed("planning.accommodation", role="accommodation")
     async def accommodation(self, state):
         output = await self.invoke("accommodation", state)
         records = []
@@ -694,6 +700,7 @@ class SixAgentRuntime:
         return {"hotels": records, "pending_jobs": copy.deepcopy(self.pending),
                 "warnings": self.warnings("accommodation", output)}
 
+    @observed("planning.transport", role="transport_booking")
     async def transport(self, state):
         output = await self.invoke("transport_booking", state)
         labels = list(dict.fromkeys(label for j in state["journeys"] for label in (j.origin, j.destination)))
@@ -778,5 +785,6 @@ class SixAgentRuntime:
             "warnings": self.warnings("transport_booking", output),
         }
 
+    @observed("planning.presentation", role="response_aggregator")
     async def presentation(self, state):
         return await self.invoke("response_aggregator", state)

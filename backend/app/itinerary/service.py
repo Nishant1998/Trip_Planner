@@ -13,6 +13,7 @@ from app.providers.tool_loop import OpenAIResponsesToolModel
 from app.services.progress import ProgressReporter
 from app.models.progress import PlanningStage
 from app.services.demo_usage import refund_unstarted_plan
+from app.services.tracing import observed, trace_failure, trace_metadata
 
 from .agents import AGENT_TEMPLATES
 from .graph import GraphHandlers, build_graph, initial_state
@@ -142,7 +143,9 @@ class PlanningService:
             task.add_done_callback(self.tasks.discard)
         return {"run_id": job["id"], "status": job["status"], "created": created}
 
+    @observed("planning.job", root=True, entry_point="planning_worker")
     async def _run(self, job, request):
+        trace_metadata(job_id=str(job["id"]), trip_id=request.trip_id)
         catalog = model = None
         providers_ready = False
         async with self.semaphore:
@@ -160,12 +163,14 @@ class PlanningService:
                 agents = {name: cls(runtime) for name, cls in AGENT_TEMPLATES.items()}
                 highest_progress = 0
 
+                @observed("planning.save", stage="saving")
                 async def save(plan):
                     async with progress.track(PlanningStage.SAVING):
                         return await self.store.save_plan(plan, request.snapshot_id)
 
                 async def stage(task, routing_count):
                     nonlocal highest_progress
+                    trace_metadata(stage=task)
                     # Stages are estimates; never report 100 before save succeeds.
                     percent = min(
                         95,
@@ -215,6 +220,8 @@ class PlanningService:
                 if saved:
                     self.display_plans.put(state["final_plan"])
                 status = "completed" if saved else "failed"
+                if not saved:
+                    trace_failure("StorageFailed")
                 result = {
                     "plan_id": state["persistence"].get("plan_id"),
                     "plan_status": state["final_plan"].status,
@@ -245,7 +252,8 @@ class PlanningService:
                     job["id"], "interrupted", "Interrupted; explicit retry required", 0
                 )
                 raise
-            except Exception:  # noqa: BLE001 - background job boundary, expose safe failure code
+            except Exception as error:  # noqa: BLE001 - background job boundary, expose safe failure code
+                trace_failure(type(error).__name__)
                 if not providers_ready and isinstance(self.store, PlanningStore):
                     try:
                         await asyncio.to_thread(
