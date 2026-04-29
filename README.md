@@ -1,195 +1,225 @@
 # TripAi — AI Travel Planner
 
-**Plan a trip through conversation, review your requirements, and get a personalised day-by-day itinerary.**
+Plan a trip through conversation, confirm your requirements, and explore a personalised day-by-day itinerary.
 
-React · TypeScript · FastAPI · LangGraph · OpenAI · PostgreSQL
+[![CI](https://github.com/Nishant1998/Trip_Planner/actions/workflows/ci.yml/badge.svg)](https://github.com/Nishant1998/Trip_Planner/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![React 19](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C)
 
-[Demo](#demo) · [Features](#features) · [Screenshots](#screenshots) · [Architecture](#how-it-works) · [Run locally](#run-tripai-locally) · [Important notes](#important-notes)
+[Demo](#demo) · [Features](#features) · [Architecture](#architecture) · [Setup](#setup) · [Deployment](#deployment)
 
-## Introduction
-
-Planning a trip usually means comparing places, routes, hotels, and budgets across several websites. TripAi brings those steps into one application.
-
-Its assistant, **Riya**, asks about your destination, dates, budget, interests, and travel preferences. You review the trip summary before generation starts. The planner then researches options and creates an itinerary, while the website shows progress updates.
-
-The project brings together a conversational interface, a multi-agent planning workflow, saved user data, external API integrations, and an interactive itinerary.
+TripAi brings trip discovery, travel research, and itinerary planning into one application. Its assistant, **Riya**, asks about your destination, dates, budget, and preferences. After you confirm the summary, the backend coordinates planning agents and shows progress as your itinerary takes shape.
 
 ## Demo
 
-**[Watch the full walkthrough](docs/assets/tripai-demo.mp4)**
+<p align="center">
+  <img src="docs/assets/tripai-demo.gif" alt="TripAi Walkthrough Preview" width="100%" style="border-radius: 8px;" />
+</p>
 
-The walkthrough covers trip discovery, confirmation, planning progress, itinerary review, and saved trips. It combines selected workflow screens, a prepared Jaipur sample, and an existing Goa draft; it is **not one uninterrupted completed planning run**.
+*Complete walkthrough showing conversational discovery with Riya, confirmation card gating, real-time agent planning progress, and the interactive itinerary canvas.*
 
-**Live demo:** Coming soon.
+<details>
+<summary>More screenshots</summary>
+
+**Landing page and public examples**
+
+<img src="docs/assets/tripai-home.png" alt="TripAi landing page with public sample trips" width="480" />
+
+**Traveler profile and usage**
+
+<img src="docs/assets/tripai-profile.png" alt="Traveler preferences and demo allowances, with contact details redacted" width="680" />
+
+</details>
 
 ## Features
 
-| Capability | What you can do |
+- **Conversational planning:** describe a trip, answer follow-up questions, and change the details before confirming.
+- **Personalised itineraries:** account for budget, pace, interests, must-see places, dietary needs, and profile preferences.
+- **Live progress:** see updates while the planner researches places, travel options, and accommodation.
+- **Itinerary workspace:** explore the timeline, place photos, Google Maps links, stays, dining, packing tips, and review notes.
+- **Saved trips and PDF export:** return to previous conversations and plans, or save an itinerary through print-to-PDF.
+- **Google sign-in and usage limits:** access personal trips and see the remaining demo allowance on the profile page.
+- **Public examples:** browse Jaipur, Lonavala, and Paris itineraries without signing in or starting a new model request.
+
+## How to use
+
+1. **Explore an example:** open a sample itinerary from the landing page without signing in.
+2. **Plan your own trip:** sign in with Google, select **Create Trip**, and tell Riya your destination, dates, budget, and preferences. Review the collected details before starting planning.
+3. **Review the result:** follow the progress updates, explore your itinerary, and check the review notes before making bookings. Revisit saved trips from **My Trips** or export a PDF.
+
+## Architecture
+
+<p align="center">
+  <a href="docs/assets/tripai-architecture.png">
+    <img src="docs/assets/tripai-architecture.png" alt="TripAi architecture: React, FastAPI, trip collection, planning agents, external APIs, PostgreSQL, and observability" width="900" />
+  </a>
+</p>
+
+**Collect → Confirm → Research and plan → Validate → Save and display**
+
+The collection workflow turns the conversation into structured trip requirements. A LangGraph supervisor coordinates destination research, itinerary planning, accommodation, transport, and response aggregation. Python validators check the combined output, PostgreSQL stores the result, and FastAPI streams progress to the frontend through Server-Sent Events (SSE).
+
+### Implementation highlights
+
+- **Controlled planning:** [confirmation checks](backend/app/collection/confirmation_gate.py), [typed state and bounded agent routing](backend/app/itinerary/graph.py), and [plan validation](backend/app/itinerary/validation.py) keep the workflow tied to the user's requirements.
+- **Route comparison:** [OR-Tools CP-SAT](backend/app/planning_tools/route_optimizer.py) compares cheapest, balanced, and fastest options. The planner uses supplied connections and an allocated city order; unknown prices stay explicit.
+- **Reliable job handling:** [snapshot-based jobs](backend/app/itinerary/store.py), [chat idempotency](backend/app/db/migrations/002_chat_idempotency.sql), and [database-backed allowances](backend/app/services/demo_usage.py) limit duplicate work and API consumption.
+- **Observability:** [structured logs](backend/app/services/logging.py) and optional [LangSmith traces](backend/app/services/tracing.py) capture operational metadata without sending conversation content through the explicit tracing integration.
+- **Build checks:** [GitHub Actions](.github/workflows/ci.yml) runs lint, frontend builds, dependency audits, and container startup checks. Docker packages the app behind Caddy.
+
+## Tech stack
+
+| Area | Technologies |
 |---|---|
-| **Natural conversation** | Describe a trip, answer Riya's follow-up questions, and change requirements. |
-| **Personalised plans** | Account for budget, travel pace, must-see places, food preferences, and relevant profile information. |
-| **Confirmation before planning** | Review the collected trip details before starting generation. |
-| **Live progress updates** | Follow the planner's progress while it researches and builds the itinerary. |
-| **Interactive itinerary** | Review the daily timeline, map links, stays, dining suggestions, travel tips, and review notes. |
-| **Saved trips and PDF export** | Revisit conversations and plans, or save an itinerary using the browser's print-to-PDF option. |
-| **Google sign-in and demo limits** | Access private trips through sign-in, with usage limits to control API consumption. |
-| **Public sample trips** | Explore Jaipur, Lonavala, and Paris examples without signing in. |
-| **Logging and tracing** | Inspect backend logs and optional LangSmith traces for troubleshooting. |
+| Frontend | React, TypeScript, Vite, Tailwind CSS, TanStack Query |
+| Backend | Python 3.11, FastAPI, PydanticAI, Pydantic |
+| AI and planning | OpenAI, LangGraph, OR-Tools |
+| Database and auth | PostgreSQL / Neon, Psycopg, Google Identity Services |
+| Travel data | Google Places / Routes, OpenRouteService, Open-Meteo, Frankfurter; optional Bright Data providers |
+| Operations | Docker, Caddy, GitHub Actions, structured logs, LangSmith |
 
-## Screenshots
+## Setup
 
-<details>
-<summary><strong>Landing page and public sample trips</strong></summary>
+You need a PostgreSQL database, a Google OAuth web client ID, and API credentials for live planning. Configure the environment first, then choose **Container setup** (Docker Compose) or **Development servers** (Python 3.11 and Node.js 22).
 
-![TripAi landing page with example conversations and public sample trips](docs/assets/tripai-home.png)
-
-</details>
-
-<details>
-<summary><strong>Trip discovery with Riya</strong></summary>
-
-![TripAi chat interface with Riya, suggested replies, and trip summary controls](docs/assets/tripai-chat.png)
-
-</details>
-
-<details>
-<summary><strong>Traveler profile, preferences, and demo usage</strong></summary>
-
-![TripAi traveler profile and usage allowances, with email and phone number redacted](docs/assets/tripai-profile.png)
-
-Email and phone details have been redacted for publication. The remaining interface is unchanged.
-
-</details>
-
-### Public sample trips
-
-The sample trips use the same itinerary interface as real plans. They are generated examples that were subsequently reviewed and simplified; opening them does not make a new model call.
-
-| Sample | Local route |
-|---|---|
-| Jaipur heritage weekend | `/examples/jaipur-heritage` |
-| Lonavala family road trip | `/examples/lonavala-family` |
-| Paris art and culture | `/examples/paris-culture` |
-
-## How it works
-
-```text
-Describe the trip → Answer follow-up questions → Confirm the summary
-       → Research and plan → Review the itinerary → Save or export
+```bash
+git clone https://github.com/Nishant1998/Trip_Planner.git
+cd Trip_Planner
 ```
 
-The application has two main workflows:
+<details>
+<summary><strong>Configuration — required for either setup</strong></summary>
 
-1. **Trip discovery:** Riya collects the requirements, updates trip memory, answers questions, and prepares a confirmation summary.
-2. **Itinerary planning:** a supervisor coordinates destination research, itinerary planning, accommodation research, transport research, and response aggregation. The backend validates the structured results and saves the plan.
-
-[![TripAi architecture — frontend, trip collection, planning agents, external APIs, and persistence](docs/assets/tripai-architecture.png)](docs/assets/tripai-architecture.png)
-
-[Open the full-resolution architecture diagram](docs/assets/tripai-architecture.png).
-
-The backend streams progress to the browser using **Server-Sent Events (SSE)**. PostgreSQL stores users, conversations, trip requirements, and saved plans.
-
-## Technology stack
-
-| Area | Tools |
-|---|---|
-| Frontend | React, TypeScript, Vite, Tailwind CSS |
-| Backend | Python 3.11, FastAPI, PydanticAI |
-| AI workflow | LangGraph, OpenAI |
-| Database | PostgreSQL / Neon |
-| Authentication | Google Identity Services |
-| Travel data | Google Maps/Places, OpenRouteService, weather and currency adapters |
-| Monitoring | Structured logs, LangSmith |
-| Build and packaging | Docker, Docker Compose, Caddy, GitHub Actions |
-
-## Run TripAi locally
-
-Run commands from the repository root unless a different directory is shown.
-
-### Prerequisites
-
-| Requirement | Purpose |
-|---|---|
-| Neon/PostgreSQL database | Store users, conversations, trip requirements, and saved plans. |
-| Google OAuth web client ID | Enable Google sign-in. |
-| OpenAI, Google Maps/Places, and OpenRouteService keys | Enable live planning and provider integrations. |
-| Docker Desktop | Run the container setup. |
-| Python 3.11 and Node.js 22 | Run the development setup. |
-
-### One-time settings
-
-Create `backend/.env` from `backend/.env.example`. Add the database URL, Google client ID, OpenAI key, Maps key, and route key using the variable names in the example file. Set:
+Create `backend/.env` from [the example](backend/.env.example). Add your credentials and choose model IDs available to your OpenAI account:
 
 ```dotenv
-PLANNING_ENABLED=true
+DATABASE_URL=your-postgresql-connection-string
+RIYA_DATABASE_SCHEMA=trip_planner_dev
 RIYA_AUTO_MIGRATE=false
+OPENAI_API_KEY=your-api-key
+OPENAI_CHAT_MODEL=your-chat-model
+OPENAI_MODEL=your-planning-model
+RIYA_AUTH_MODE=google
+GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_MAPS_API_KEY=your-maps-key
+ORS_API_KEY=your-openrouteservice-key
+PLANNING_ENABLED=true
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ```
 
-For Google sign-in, add the appropriate local website address to the OAuth client's **Authorized JavaScript origins**:
+Use the SSL settings supplied with your Neon connection string. Enable the required Google Places and Routes APIs. Provider calls may incur charges; optional flight and hotel research needs additional [Bright Data configuration](backend/app/planning_tools/catalog.py).
 
-| Setup | Authorized JavaScript origin |
-|---|---|
-| Containers | `http://localhost:8080` |
-| Development servers | `http://localhost:5173` |
+In Google Cloud, add your frontend address to the OAuth client's **Authorized JavaScript origins**: `http://localhost:8080` for containers or `http://localhost:5173` for development. Add `http://127.0.0.1:5173` if you use that address too.
 
-**Database safety:** Neon runs outside this repository and outside Docker. Put its connection string in `DATABASE_URL`. **If you are using the existing TripAi database, do not run any database setup command.** For a brand-new isolated database only, run `python -m app.db init` from `backend/` after adding its connection details.
+For optional tracing, set `TRIPAI_TRACING_ENABLED=true`, `LANGSMITH_API_KEY`, and `LANGSMITH_PROJECT=TripAi`. Leave automatic `LANGSMITH_TRACING` and `LANGCHAIN_TRACING_V2` disabled; the app exports its own metadata-only spans.
 
-Keep all secrets in `backend/.env`. The frontend only needs the public Google client ID in `frontend/.env` as `VITE_GOOGLE_CLIENT_ID`; use `VITE_API_BASE=http://127.0.0.1:8000` when running the development servers.
+</details>
 
-### Run with containers
+<details>
+<summary><strong>Container setup</strong></summary>
 
-Create `deploy/.env` from `deploy/.env.example`, set `GOOGLE_OAUTH_CLIENT_ID` to the same public Google client ID, and leave `BACKEND_ENV_FILE=backend/.env`.
+Create `deploy/.env` from [the example](deploy/.env.example). Set the same `GOOGLE_OAUTH_CLIENT_ID` and keep `BACKEND_ENV_FILE=backend/.env`.
+
+For a **new, empty database only**, initialise the schema:
+
+```bash
+docker compose --env-file deploy/.env -p tripai-local build backend
+docker compose --env-file deploy/.env -p tripai-local run --rm backend python -m app.db init
+```
+
+Start the application:
 
 ```bash
 docker compose --env-file deploy/.env -p tripai-local up -d --build --wait --wait-timeout 180
 ```
 
-Open **http://localhost:8080**. The frontend, backend, and Caddy web server start together; Neon remains external.
-
-To confirm the app is ready without creating a trip:
+Open **http://localhost:8080**. Caddy serves the frontend and forwards API requests to the backend. Neon remains external.
 
 ```bash
-python deploy/smoke.py --url http://localhost:8080 --ready
+# View backend logs
+docker compose --env-file deploy/.env -p tripai-local logs -f backend
+
+# Stop the application
+docker compose --env-file deploy/.env -p tripai-local down
 ```
 
-### Run during development
+After changing application code, rerun the startup command with `--build`.
 
-Start the backend in one terminal:
+</details>
+
+<details>
+<summary><strong>Development servers</strong></summary>
+
+Create `frontend/.env` from [the example](frontend/.env.example). Set `VITE_GOOGLE_CLIENT_ID` to the backend's client ID and `VITE_API_BASE=http://127.0.0.1:8000`. Keep API secrets in the backend environment file.
+
+Start from the repository root. In the first terminal:
 
 ```powershell
 cd backend
 python -m venv .venv
 .venv/Scripts/python.exe -m pip install -r requirements.lock
-.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
-Start the website in a second terminal:
+For a **new, empty database only**, run `.venv/Scripts/python.exe -m app.db init`. Then start FastAPI:
 
 ```powershell
+.venv/Scripts/python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000 --reload
+```
+
+In a second terminal, starting from the repository root:
+
+```bash
 cd frontend
 npm ci
 npm run dev
 ```
 
-Open **http://localhost:5173**. On Linux or macOS, use the equivalent `python3`, virtual-environment, and shell commands.
+Open **http://localhost:5173**. On macOS or Linux, create the environment using `python3` and replace `.venv/Scripts/python.exe` with `.venv/bin/python`.
 
-## Checks and deployment
+</details>
+
+### Checks
 
 | Command | Run from |
 |---|---|
 | `npm run lint` | `frontend/` |
 | `npm run build` | `frontend/` |
-| `ruff check app scripts` (install Ruff first) | `backend/` |
-| `python deploy/smoke.py --url http://localhost:8080 --ready` | Repository root |
+| `ruff check app scripts` | `backend/`; install Ruff in the virtual environment first |
+| `python -m app.db check` | `backend/`, using its virtual environment |
+| `python deploy/smoke.py --url http://localhost:8080 --ready` | Repository root, with the container app running; requires Python |
 
-GitHub Actions checks lint, builds, dependencies, and container startup. **Deployment automation is not connected yet.** The current Docker setup runs the frontend and backend together, with Neon hosted separately.
+The smoke check verifies routes, assets, anonymous-access protection, and readiness. It does not generate a trip or test live itinerary quality.
 
-For deployment, use a Docker-capable Linux host, keep `backend/.env` only on that host, add your real domain to Google OAuth, and run the same Compose command with the production environment values.
+## Deployment
+
+The [production Compose override](compose.production.yaml) runs the frontend and backend on one Linux host behind Caddy, with Neon hosted separately. GitHub Actions currently provides CI checks; server deployment is not automated.
+
+<details>
+<summary><strong>Server configuration and startup</strong></summary>
+
+Use Docker Compose v2.24.4 or newer. Keep `backend/.env` on the server, point your domain to its IP address, and allow inbound ports 80 and 443. Set these values in `deploy/.env`:
+
+```dotenv
+BACKEND_ENV_FILE=backend/.env
+GOOGLE_OAUTH_CLIENT_ID=your-client-id.apps.googleusercontent.com
+PUBLIC_ORIGIN=https://tripai.example.com
+SITE_ADDRESS=tripai.example.com
+```
+
+Replace the example domain and add the HTTPS origin to Google OAuth. Initialise the schema only if using a new, empty database, then run:
+
+```bash
+docker compose --env-file deploy/.env -p tripai -f compose.yaml -f compose.production.yaml up -d --build --wait --wait-timeout 180
+```
+
+Caddy handles HTTPS for the configured domain. Keep environment files out of Git.
+
+</details>
 
 ## Important notes
 
-- **Planning drafts, not confirmed bookings:** verify prices, availability, opening hours, and important travel details before booking.
-- **Research only:** accommodation and transport tools research options; they do not make reservations or payments.
-- **One backend worker:** live events and active planning tasks run inside one process. Restarting it can interrupt an active plan.
-- **Reviewed examples:** public samples are snapshots rather than fresh searches.
-- **Provider dependencies:** live planning depends on provider access, coverage, and API limits.
+- Itineraries are planning drafts. Verify prices, availability, opening hours, and schedules before booking; the app does not make reservations or payments.
+- Live results and photos depend on provider coverage. Public sample trips are saved examples rather than fresh searches.
+- Run one backend worker: planning tasks and SSE subscriptions are process-local, and a restart can interrupt an active plan.
