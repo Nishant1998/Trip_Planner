@@ -274,11 +274,11 @@ async def test_mode_status() -> dict[str, bool]:
 
 @router.post("/logout")
 async def logout(
-    payload: LogoutRequest, request: Request, response: Response
+    request: Request, response: Response, payload: LogoutRequest | None = None
 ) -> dict[str, bool]:
     """Revoke an active session token."""
     repository: TripRepository = request.app.state.repository
-    token = request.cookies.get(SESSION_COOKIE) or payload.session_token
+    token = request.cookies.get(SESSION_COOKIE) or (payload.session_token if payload else None)
     if token:
         repository.delete_user_session(_hash_token(token))
     response.delete_cookie(SESSION_COOKIE, path="/")

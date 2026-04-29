@@ -189,15 +189,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      if (user?.email && window.google?.accounts?.id?.revoke) {
-        window.google.accounts.id.revoke(user.email, () => undefined)
+      const response = await apiFetch('/api/auth/logout', { method: 'POST' })
+      if (!response.ok) {
+        setAuthError(await readApiError(response))
+        return
       }
-      await apiFetch('/api/auth/logout', { method: 'POST' })
-    } finally {
       setUser(null)
       window.location.assign('/')
+    } catch {
+      setAuthError('Unable to sign out. Please try again.')
     }
-  }, [user?.email])
+  }, [])
 
   const value = useMemo<AuthContextType>(() => ({
     user,
